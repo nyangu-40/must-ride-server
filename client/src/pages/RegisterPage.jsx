@@ -57,10 +57,8 @@ function RegisterPage() {
 
   return (
     <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
-      <div className="mb-8 space-y-3">
-        <p className="text-sm uppercase tracking-[0.3em] text-secondary">Register for a trip</p>
+      <div className="mb-8 space-y-3 text-center">
         <h2 className="text-3xl font-semibold text-slate-900">Complete your booking</h2>
-        <p className="text-slate-600">Fill in your details and pay securely with PayChangu. Seats are charged at MWK 100 each.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -74,7 +72,7 @@ function RegisterPage() {
               onChange={handleChange}
               required
               className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-primary"
-              placeholder="John Doe"
+              placeholder="Nyangu"
             />
           </label>
           <label className="block">
