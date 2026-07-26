@@ -55,3 +55,17 @@ export async function findRegistrationByReference(reference) {
   }
   return data;
 }
+
+export async function getTakenSeats() {
+  const { data, error } = await supabase
+    .from('registrations')
+    .select('selected_seats')
+    .in('payment_status', ['Pending', 'Paid']);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const seats = (data || []).flatMap((row) => row.selected_seats || []);
+  return seats;
+}

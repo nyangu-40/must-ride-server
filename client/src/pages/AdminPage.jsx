@@ -38,13 +38,15 @@ function AdminPage() {
   }, [registrations]);
 
   const downloadCSV = () => {
-    const headers = ['Full Name', 'Phone', 'Pickup', 'Destination', 'Seats', 'Amount', 'Status', 'Reference', 'Payment Date', 'Created At'];
+    const headers = ['Full Name', 'Phone', 'Pickup', 'Destination', 'Seats', 'Selected Seats', 'Passengers', 'Amount', 'Status', 'Reference', 'Payment Date', 'Created At'];
     const rows = filtered.map((item) => [
       item.fullname,
       item.phone,
       item.pickup_location,
       item.destination,
       item.seats,
+      item.selected_seats?.join(', ') || '',
+      item.passengers?.map((p) => `${p.seat}: ${p.name}`).join('; ') || '',
       item.amount,
       item.payment_status,
       item.payment_reference || '',

@@ -10,6 +10,8 @@ create table registrations (
   pickup_location text not null,
   destination text not null,
   seats int not null,
+  selected_seats text[] not null default '{}',
+  passengers jsonb not null default '[]',
   amount numeric not null,
   payment_status text not null default 'Pending',
   payment_reference text,

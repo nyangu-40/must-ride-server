@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import apiRoutes from './routes/index.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
+import { FRONTEND_URL } from './config/index.js';
 
 const app = express();
 
@@ -24,6 +25,8 @@ app.use('/webhook', webhookRoutes);
 app.get('/', (req, res) => {
   res.json({ message: 'MUST Ride Registration API is running' });
 });
+
+console.log('Server FRONTEND_URL =', FRONTEND_URL);
 
 app.use(errorHandler);
 

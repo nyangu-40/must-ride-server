@@ -13,8 +13,8 @@ export async function createPaychanguCheckout({ fullName, email, phone, amount, 
     amount,
     currency: 'MWK',
     tx_ref: reference,
-    callback_url: `${FRONTEND_URL}/`,
-    return_url: `${FRONTEND_URL}/`,
+    callback_url: `${FRONTEND_URL}/receipt/${reference}`,
+    return_url: `${FRONTEND_URL}/receipt/${reference}`,
     first_name: fullName.split(' ')[0],
     last_name: fullName.split(' ').slice(1).join(' ') || fullName.split(' ')[0],
     email: email || 'customer@example.com',
@@ -23,6 +23,9 @@ export async function createPaychanguCheckout({ fullName, email, phone, amount, 
       phone,
     },
   };
+
+  console.log('PayChangu checkout payload callback_url:', payload.callback_url);
+  console.log('PayChangu checkout payload return_url:', payload.return_url);
 
   const response = await axios.post(PAYCHANGU_API_URL, payload, {
     headers: {
