@@ -26,12 +26,20 @@ function LandingPage() {
           <p className="mt-2 text-2xl font-semibold text-slate-900">Mpoto Ride</p>
         </div>
 
-        <Link
-          to="/register"
-          className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-semibold text-white shadow-lg shadow-primary/20 transition hover:bg-slate-900 sm:w-auto"
-        >
-          Register Now
-        </Link>
+        <div className="flex flex-col gap-4 w-full sm:w-auto">
+          <Link
+            to="/register"
+            className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-semibold text-white shadow-lg shadow-primary/20 transition hover:bg-slate-900 sm:w-auto"
+          >
+            Register Now
+          </Link>
+          <Link
+            to="/admin"
+            className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-4 text-base font-semibold text-slate-900 transition hover:bg-slate-50 sm:w-auto"
+          >
+            Admin Dashboard
+          </Link>
+        </div>
       </div>
     </section>
   );
