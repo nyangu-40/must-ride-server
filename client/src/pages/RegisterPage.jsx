@@ -299,28 +299,25 @@ function RegisterPage() {
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-          <div className="mb-4 flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div>
               <p className="text-sm font-medium text-slate-700">Choose your seats</p>
-              <p className="text-sm text-slate-500">Click to select the seat(s) you want. The first selected seat will be assigned to the payer.</p>
+              <p className="mt-1 text-sm text-slate-500">Click to select the seat(s) you want. The first selected seat will be assigned to the payer.</p>
             </div>
-            <div className="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+            <div className="self-start whitespace-nowrap rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
               {selectedSeats.length} seat{selectedSeats.length === 1 ? '' : 's'} selected
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowSeatMap(true)}
-                className="inline-flex items-center gap-2 rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-              >
-                Open seat map
-              </button>
-              <p className="mt-2 text-sm text-slate-600">Selected seats: {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'None'}</p>
-            </div>
-            <div className="text-sm text-slate-500">Tap to open visual seat map</div>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              type="button"
+              onClick={() => setShowSeatMap(true)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 sm:w-auto"
+            >
+              Open seat map
+            </button>
+            <p className="text-sm text-slate-600 sm:text-right">Selected seats: {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'None'}</p>
           </div>
 
           <SeatMapModal open={showSeatMap} onClose={() => setShowSeatMap(false)} selectedSeats={selectedSeats} onToggle={handleSeatToggle} takenSeats={takenSeats} />
