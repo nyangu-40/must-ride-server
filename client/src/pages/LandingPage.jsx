@@ -33,12 +33,6 @@ function LandingPage() {
           >
             Register Now
           </Link>
-          <Link
-            to="/admin"
-            className="inline-flex w-full items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-4 text-base font-semibold text-slate-900 transition hover:bg-slate-50 sm:w-auto"
-          >
-            Admin Dashboard
-          </Link>
         </div>
       </div>
     </section>

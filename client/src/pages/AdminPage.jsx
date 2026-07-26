@@ -6,22 +6,38 @@ function AdminPage() {
   const [registrations, setRegistrations] = useState([]);
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
+  const [token, setToken] = useState(() => localStorage.getItem('adminToken') || '');
+  const [tokenInput, setTokenInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (!token) {
+      return;
+    }
+
     async function loadRegistrations() {
+      setIsLoading(true);
       try {
-        const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN || '';
         const response = await api.get('/api/registrations', {
-          headers: { 'x-admin-token': ADMIN_TOKEN },
+          headers: { 'x-admin-token': token },
         });
         setRegistrations(response.data || []);
+        setError('');
       } catch (err) {
-        setError(err?.response?.data?.message || 'Unable to load registrations.');
+        if (err?.response?.status === 401) {
+          setError('Unauthorized admin token. Please sign in again.');
+          localStorage.removeItem('adminToken');
+          setToken('');
+        } else {
+          setError(err?.response?.data?.message || 'Unable to load registrations.');
+        }
+      } finally {
+        setIsLoading(false);
       }
     }
 
     loadRegistrations();
-  }, []);
+  }, [token]);
 
   const filtered = useMemo(() => {
     return registrations.filter((item) => item.fullname.toLowerCase().includes(search.toLowerCase()));
@@ -36,6 +52,29 @@ function AdminPage() {
       pending,
     };
   }, [registrations]);
+
+  const handleLogin = (event) => {
+    event.preventDefault();
+    const trimmedToken = tokenInput.trim();
+
+    if (!trimmedToken) {
+      setError('Please enter the admin token.');
+      return;
+    }
+
+    localStorage.setItem('adminToken', trimmedToken);
+    setToken(trimmedToken);
+    setError('');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    setToken('');
+    setTokenInput('');
+    setRegistrations([]);
+    setSearch('');
+    setError('');
+  };
 
   const downloadCSV = () => {
     const headers = ['Full Name', 'Phone', 'Pickup', 'Destination', 'Seats', 'Selected Seats', 'Passengers', 'Amount', 'Status', 'Reference', 'Payment Date', 'Created At'];
@@ -67,20 +106,62 @@ function AdminPage() {
 
   return (
     <section className="mx-auto max-w-6xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-secondary">Admin dashboard</p>
-          <h2 className="text-3xl font-semibold text-slate-900">Registration summary</h2>
-          <p className="text-slate-600">Review recent signups, payment status, and export registrations.</p>
+      {!token ? (
+        <div className="mx-auto max-w-xl rounded-3xl bg-slate-50 p-8 shadow-sm shadow-slate-200">
+          <div className="mb-6 text-center">
+            <p className="text-sm uppercase tracking-[0.3em] text-secondary">Admin login</p>
+            <h2 className="mt-3 text-3xl font-semibold text-slate-900">Secure access</h2>
+            <p className="mt-2 text-slate-600">Enter the admin token to view registrations.</p>
+          </div>
+
+          {error && (
+            <div className="mb-6 rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <label className="block text-sm font-medium text-slate-700">Admin token</label>
+            <input
+              type="password"
+              value={tokenInput}
+              onChange={(event) => setTokenInput(event.target.value)}
+              placeholder="Enter admin token"
+              className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-primary"
+            />
+            <button
+              type="submit"
+              className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-900"
+            >
+              Sign in
+            </button>
+          </form>
         </div>
-        <button
-          type="button"
-          onClick={downloadCSV}
-          className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-900"
-        >
-          Download CSV
-        </button>
-      </div>
+      ) : (
+        <>
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-secondary">Admin dashboard</p>
+              <h2 className="text-3xl font-semibold text-slate-900">Registration summary</h2>
+              <p className="text-slate-600">Review recent signups, payment status, and export registrations.</p>
+            </div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <button
+                type="button"
+                onClick={downloadCSV}
+                className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-900"
+              >
+                Download CSV
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-3xl bg-slate-50 p-6">
@@ -148,6 +229,8 @@ function AdminPage() {
           </table>
         </div>
       </div>
+        </>
+      )}
     </section>
   );
 }
