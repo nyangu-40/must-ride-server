@@ -4,6 +4,7 @@ import {
   getAllRegistrations as fetchAllRegistrations,
   getRegistrationById as fetchRegistrationById,
   getTakenSeats as fetchTakenSeats,
+  updatePaymentStatus as updateRegistrationPaymentStatus,
 } from '../services/registrationService.js';
 import { createPaychanguCheckout } from '../services/paychanguService.js';
 import { PRICE_PER_SEAT } from '../config/index.js';
@@ -147,6 +148,26 @@ export async function getTakenSeats(req, res, next) {
   try {
     const seats = await fetchTakenSeats();
     res.json({ seats });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function updateRegistrationStatus(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { payment_status } = req.body || {};
+
+    if (!['Paid', 'Pending'].includes(payment_status)) {
+      return res.status(400).json({ message: 'payment_status must be either Paid or Pending.' });
+    }
+
+    const updated = await updateRegistrationPaymentStatus(id, {
+      payment_status,
+      payment_date: payment_status === 'Paid' ? new Date().toISOString() : null,
+    });
+
+    res.json(updated);
   } catch (err) {
     next(err);
   }

@@ -104,6 +104,21 @@ function AdminPage() {
     document.body.removeChild(link);
   };
 
+  const updateStatus = async (id, paymentStatus) => {
+    try {
+      setError('');
+      await api.patch(`/api/registration/${id}/status`, { payment_status: paymentStatus }, {
+        headers: { 'x-admin-token': token },
+      });
+
+      setRegistrations((current) =>
+        current.map((item) => (item.id === id ? { ...item, payment_status: paymentStatus } : item))
+      );
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Unable to update payment status.');
+    }
+  };
+
   return (
     <section className="mx-auto max-w-6xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
       {!token ? (
@@ -212,9 +227,27 @@ function AdminPage() {
                   <td className="px-5 py-4 text-slate-600">{registration.seats}</td>
                   <td className="px-5 py-4 text-slate-800">{formatCurrency(registration.amount)}</td>
                   <td className="px-5 py-4">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${registration.payment_status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {registration.payment_status}
-                    </span>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${registration.payment_status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {registration.payment_status}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => updateStatus(registration.id, 'Paid')}
+                          className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                        >
+                          Mark paid
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateStatus(registration.id, 'Pending')}
+                          className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
+                        >
+                          Mark pending
+                        </button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}

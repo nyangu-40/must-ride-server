@@ -4,8 +4,12 @@ import { verifyWebhookSignature } from '../services/paychanguService.js';
 function normalizePaymentStatus(status) {
   if (!status) return 'Pending';
   const normalized = String(status).toLowerCase();
-  if (['paid', 'successful', 'success', 'completed', 'complete', 'succeeded'].includes(normalized)) {
+  const successValues = ['paid', 'successful', 'success', 'completed', 'complete', 'succeeded', 'approved', 'confirmed'];
+  if (successValues.includes(normalized)) {
     return 'Paid';
+  }
+  if (['failed', 'cancelled', 'canceled', 'declined', 'expired', 'pending'].includes(normalized)) {
+    return 'Pending';
   }
   return 'Pending';
 }
@@ -20,10 +24,12 @@ export async function handlePayChanguWebhook(req, res, next) {
     }
 
     const payload = req.body || {};
+    console.log('PayChangu webhook payload:', JSON.stringify(payload));
+
     const reference = payload.reference || payload.tx_ref || payload.data?.tx_ref || payload.id;
     const paymentReference = payload.payment_reference || payload.transaction_reference || payload.tx_ref || null;
     const paymentDate = payload.payment_date || payload.created_at || payload.completed_at || null;
-    const paymentStatus = normalizePaymentStatus(payload.status || payload.payment_status || payload.state);
+    const paymentStatus = normalizePaymentStatus(payload.status || payload.payment_status || payload.state || payload.data?.status || payload.data?.state);
 
     let registration = null;
 
