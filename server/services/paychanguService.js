@@ -9,12 +9,15 @@ if (!PAYCHANGU_SECRET_KEY) {
 }
 
 export async function createPaychanguCheckout({ fullName, email, phone, amount, reference }) {
+  const receiptPath = `/receipt/${reference}`;
+  const receiptUrl = `${FRONTEND_URL}/#/receipt/${reference}`;
+
   const payload = {
     amount,
     currency: 'MWK',
     tx_ref: reference,
-    callback_url: `${FRONTEND_URL}/receipt/${reference}`,
-    return_url: `${FRONTEND_URL}/receipt/${reference}`,
+    callback_url: receiptUrl,
+    return_url: receiptUrl,
     first_name: fullName.split(' ')[0],
     last_name: fullName.split(' ').slice(1).join(' ') || fullName.split(' ')[0],
     email: email || 'customer@example.com',

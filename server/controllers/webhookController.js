@@ -45,6 +45,14 @@ export async function handlePayChanguWebhook(req, res, next) {
       payment_date: paymentDate || registration.payment_date,
     });
 
+    if (paymentStatus === 'Pending' && registration.payment_status === 'Paid') {
+      await updatePaymentStatus(registration.id, {
+        payment_status: 'Pending',
+        payment_reference: paymentReference || registration.payment_reference,
+        payment_date: paymentDate || registration.payment_date,
+      });
+    }
+
     res.json({ success: true, registration: updated });
   } catch (err) {
     next(err);
