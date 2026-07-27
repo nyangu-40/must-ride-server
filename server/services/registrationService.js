@@ -44,11 +44,15 @@ export async function updatePaymentStatus(id, updates) {
 }
 
 export async function findRegistrationByReference(reference) {
+  if (!reference) {
+    return null;
+  }
+
   const { data, error } = await supabase
     .from('registrations')
     .select('*')
     .eq('payment_reference', reference)
-    .single();
+    .maybeSingle();
 
   if (error) {
     throw new Error(error.message);
