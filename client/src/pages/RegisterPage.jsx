@@ -6,12 +6,16 @@ const PRICE_PER_SEAT = 50;
 const SEAT_COUNT = 72;
 const seatLabels = Array.from({ length: SEAT_COUNT }, (_, index) => (index + 1).toString());
 
+// Replace these with your actual pickup points and default destination.
+const PICKUP_LOCATIONS = ['Mzuzu Campus', 'Lilongwe', 'Blantyre', 'Zomba', 'Kasungu', 'Mangochi'];
+const DEFAULT_DESTINATION = 'Lilongwe';
+
 function RegisterPage() {
   const [form, setForm] = useState({
     fullname: '',
     phone: '',
-    pickup_location: '',
-    destination: '',
+    pickup_location: PICKUP_LOCATIONS[0],
+    destination: DEFAULT_DESTINATION,
   });
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [passengerNames, setPassengerNames] = useState({});
@@ -254,8 +258,8 @@ function RegisterPage() {
               value={form.fullname}
               onChange={handleChange}
               required
-              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
-              placeholder="Nyangu"
+              className="mt-2 w-full rounded-3xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
+              placeholder="Gift Nyangu"
             />
           </label>
           <label className="block">
@@ -266,7 +270,7 @@ function RegisterPage() {
               value={form.phone}
               onChange={handleChange}
               required
-              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
+              className="mt-2 w-full rounded-3xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
               placeholder="+265 999 123 456"
             />
           </label>
@@ -275,15 +279,19 @@ function RegisterPage() {
         <div className="grid gap-6 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Pickup Location</span>
-            <input
+            <select
               name="pickup_location"
-              type="text"
               value={form.pickup_location}
               onChange={handleChange}
               required
-              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
-              placeholder="Mzuzu Campus"
-            />
+              className="mt-2 w-full rounded-3xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
+            >
+              {PICKUP_LOCATIONS.map((location) => (
+                <option key={location} value={location}>
+                  {location}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Destination</span>
@@ -293,8 +301,7 @@ function RegisterPage() {
               value={form.destination}
               onChange={handleChange}
               required
-              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
-              placeholder="Town Center"
+              className="mt-2 w-full rounded-3xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
             />
           </label>
         </div>
@@ -337,7 +344,7 @@ function RegisterPage() {
                     value={passengerNames[seat] || ''}
                     onChange={handlePassengerNameChange}
                     required
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500"
+                    className="mt-2 w-full rounded-3xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
                     placeholder={`Passenger name for seat ${seat}`}
                   />
                 </label>
