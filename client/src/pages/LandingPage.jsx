@@ -4,20 +4,20 @@ function LandingPage() {
   return (
     <section className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-soft shadow-slate-200">
       <div className="relative min-h-[520px] overflow-hidden rounded-[2rem]">
-        {/* Bus photo background — replace public/bus-photo.jpg with a real photo.
-            Uses object-contain so the whole bus stays visible with no cropping;
-            the green fill shows in any empty space around it. */}
-        <div className="absolute inset-0 bg-emerald-800">
+        {/* Bus photo background — save the new photo as public/bus-photo.jpg.
+            object-contain keeps the whole bus visible with no cropping;
+            scale-x-[-1] mirrors it to face the opposite direction. */}
+        <div className="absolute inset-0 bg-slate-50">
           <img
             src="/bus-photo.jpg"
             alt=""
-            className="h-full w-full object-contain"
+            className="h-full w-full scale-x-[-1] object-contain"
           />
           <div
             className="absolute inset-0"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(6,42,26,0.15) 0%, rgba(6,42,26,0.1) 30%, rgba(6,42,26,0.75) 100%)',
+                'linear-gradient(to bottom, rgba(6,42,26,0.1) 0%, rgba(6,42,26,0.05) 30%, rgba(6,42,26,0.75) 100%)',
             }}
           />
         </div>
@@ -37,14 +37,22 @@ function LandingPage() {
           </div>
 
           <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl bg-white/60 p-5 shadow-sm backdrop-blur-sm">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="rounded-3xl bg-white/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
                 <p className="text-sm text-slate-600">Seat price</p>
                 <p className="mt-2 text-3xl font-semibold text-emerald-700">MWK 10,000</p>
               </div>
-              <div className="rounded-3xl bg-white/60 p-5 shadow-sm backdrop-blur-sm">
+              <div className="rounded-3xl bg-white/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
                 <p className="text-sm text-slate-600">Comfort</p>
-                <p className="mt-2 text-2xl font-semibold text-slate-900">Comfortable seat</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">Comfortable seat</p>
+              </div>
+              <div className="rounded-3xl bg-white/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
+                <p className="text-sm text-slate-600">Onboard</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">Charging ports</p>
+              </div>
+              <div className="rounded-3xl bg-white/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
+                <p className="text-sm text-slate-600">Onboard</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">Snacks</p>
               </div>
             </div>
 
