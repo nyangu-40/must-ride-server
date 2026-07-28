@@ -48,7 +48,7 @@ function LandingPage() {
             className="absolute inset-0"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(4,120,87,0) 40%, rgba(4,120,87,0.85) 100%)',
+                'linear-gradient(to bottom, rgba(5,150,105,0) 40%, rgba(5,150,105,0.8) 100%)',
             }}
           />
           <div
@@ -72,7 +72,7 @@ function LandingPage() {
         {/* Cards section: sized to its content only (no flex-1, no forced
             min-height), with tighter padding and gaps, so it sits snug right
             beneath the photo instead of spreading down the page. */}
-        <div className="flex flex-col items-center gap-4 bg-emerald-700 px-6 py-6 text-center sm:px-8 sm:py-7">
+        <div className="flex flex-col items-center gap-3 bg-emerald-600/80 px-6 py-4 text-center sm:px-8 sm:py-5">
           <div
             ref={priceCard.ref}
             className={`w-full max-w-xs rounded-3xl bg-white/90 p-4 shadow-sm transition-all duration-700 ease-out delay-150 ${
@@ -85,7 +85,7 @@ function LandingPage() {
 
           <div
             ref={servicesRow.ref}
-            className={`flex w-full flex-col items-center gap-4 transition-all duration-700 ease-out delay-300 sm:flex-row sm:justify-center ${
+            className={`flex w-full flex-col items-center gap-3 transition-all duration-700 ease-out delay-300 sm:flex-row sm:justify-center ${
               servicesRow.visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
             }`}
           >
