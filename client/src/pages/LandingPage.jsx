@@ -7,16 +7,17 @@ function LandingPage() {
         {/* Bus photo background — replace public/bus-photo.jpg with a real photo.
             Until then this gradient stands in so the layout still reads correctly. */}
         <div
-          className="absolute inset-0 bg-cover bg-center"
+          className="absolute inset-0 bg-cover"
           style={{
-            backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 35%, rgba(6,42,26,0.85) 100%), url('/bus-photo.jpg')`,
+            backgroundPosition: 'center 20%',
+            backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 30%, rgba(6,42,26,0.9) 100%), url('/bus-photo.jpg')`,
             backgroundColor: '#e9f5ee', // soft green fallback while the photo loads or is missing
           }}
         />
 
         {/* Content sits on top of the photo */}
         <div className="relative flex min-h-[520px] flex-col justify-between p-8 sm:p-10 lg:p-12">
-          <div className="max-w-xl space-y-4 text-left">
+          <div className="max-w-xl space-y-4 rounded-3xl bg-white/85 p-6 text-left shadow-sm backdrop-blur-sm sm:p-7">
             <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-700">
               Achina luwe
             </p>
