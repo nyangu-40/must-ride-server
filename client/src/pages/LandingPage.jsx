@@ -6,12 +6,13 @@ function LandingPage() {
       <div className="relative min-h-[520px] overflow-hidden rounded-[2rem]">
         {/* Bus photo background — save the new photo as public/bus-photo.jpg.
             object-contain keeps the whole bus visible with no cropping;
-            scale-x-[-1] mirrors it to face the opposite direction. */}
+            scale-x-[-1] mirrors it to face the opposite direction;
+            object-top nudges it upward within the frame. */}
         <div className="absolute inset-0 bg-slate-50">
           <img
             src="/bus-photo.jpg"
             alt=""
-            className="h-full w-full scale-x-[-1] object-contain"
+            className="h-full w-full scale-x-[-1] object-contain object-top"
           />
           <div
             className="absolute inset-0"
@@ -22,7 +23,8 @@ function LandingPage() {
           />
         </div>
 
-        {/* Content sits on top of the photo */}
+        {/* Content sits on top of the photo: welcome message top, price card in
+            the middle, services card + CTA at the bottom */}
         <div className="relative flex min-h-[520px] flex-col justify-between p-8 sm:p-10 lg:p-12">
           <div className="max-w-xl space-y-4 rounded-3xl bg-white/60 p-6 text-left shadow-sm backdrop-blur-sm sm:p-7">
             <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-700">
@@ -36,24 +38,19 @@ function LandingPage() {
             </p>
           </div>
 
+          <div className="mx-auto w-full max-w-xs rounded-3xl bg-white/60 p-5 text-center shadow-sm backdrop-blur-sm">
+            <p className="text-sm text-slate-600">Seat price</p>
+            <p className="mt-2 text-3xl font-semibold text-emerald-700">MWK 10,000</p>
+          </div>
+
           <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              <div className="rounded-3xl bg-white/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
-                <p className="text-sm text-slate-600">Seat price</p>
-                <p className="mt-2 text-3xl font-semibold text-emerald-700">MWK 10,000</p>
-              </div>
-              <div className="rounded-3xl bg-white/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
-                <p className="text-sm text-slate-600">Comfort</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">Comfortable seat</p>
-              </div>
-              <div className="rounded-3xl bg-white/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
-                <p className="text-sm text-slate-600">Onboard</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">Charging ports</p>
-              </div>
-              <div className="rounded-3xl bg-white/60 p-4 shadow-sm backdrop-blur-sm sm:p-5">
-                <p className="text-sm text-slate-600">Onboard</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">Snacks</p>
-              </div>
+            <div className="rounded-3xl bg-white/60 p-5 shadow-sm backdrop-blur-sm">
+              <p className="text-sm text-slate-600">On board</p>
+              <ul className="mt-2 space-y-1">
+                <li className="text-lg font-semibold text-slate-900">Comfortable seat</li>
+                <li className="text-lg font-semibold text-slate-900">Charging ports</li>
+                <li className="text-lg font-semibold text-slate-900">Snacks</li>
+              </ul>
             </div>
 
             <Link
