@@ -7,8 +7,8 @@ const SEAT_COUNT = 72;
 const seatLabels = Array.from({ length: SEAT_COUNT }, (_, index) => (index + 1).toString());
 
 // Replace these with your actual pickup points and default destination.
-const PICKUP_LOCATIONS = ['Mzuzu Campus', 'Lilongwe', 'Blantyre', 'Zomba', 'Kasungu', 'Mangochi'];
-const DEFAULT_DESTINATION = 'Lilongwe';
+const PICKUP_LOCATIONS = ['Mzuzu Depot', 'Mzimba Boma', 'Jender', 'Champhila'];
+const DEFAULT_DESTINATION = 'MUST';
 
 function RegisterPage() {
   const [form, setForm] = useState({
