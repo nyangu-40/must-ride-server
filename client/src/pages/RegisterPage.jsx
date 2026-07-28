@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import api from '../services/api.js';
 import { formatCurrency } from '../utils/formatters.js';
 
-const PRICE_PER_SEAT = 10000;
+const PRICE_PER_SEAT = 50;
 const SEAT_COUNT = 72;
 const seatLabels = Array.from({ length: SEAT_COUNT }, (_, index) => (index + 1).toString());
 

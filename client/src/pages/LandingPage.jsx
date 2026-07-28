@@ -2,37 +2,43 @@ import { Link } from 'react-router-dom';
 
 function LandingPage() {
   return (
-    <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
-      <div className="flex flex-col items-center gap-8 text-center">
-        <div className="space-y-4">
-          <p className="text-sm uppercase tracking-[0.3em] text-primary">Achina luwe</p>
-          <h1 className="text-4xl font-semibold text-slate-900">Mpoto Ride</h1>
-          <p className="text-lg text-slate-600">Travel with Mpoto Ride for comfortable student transport and fast online booking.</p>
-        </div>
-
-        <div className="grid w-full gap-4 sm:grid-cols-2">
-          <div className="rounded-3xl bg-slate-50 p-5 text-center shadow-sm shadow-slate-200">
-            <p className="text-sm text-slate-500">Seat price</p>
-            <p className="mt-2 text-3xl font-semibold text-slate-900">MWK 10,000</p>
+    <section className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-soft shadow-slate-200">
+      <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="flex flex-col justify-between bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 p-8 text-white sm:p-10 lg:p-12">
+          <div className="space-y-5 text-left">
+            <p className="text-sm uppercase tracking-[0.3em] text-sky-200">Achina luwe</p>
+            <h1 className="text-4xl font-semibold sm:text-5xl">Mpoto Ride</h1>
+            <p className="max-w-xl text-lg text-slate-200">Travel with Mpoto Ride for comfortable student transport and fast online booking.</p>
           </div>
-          <div className="rounded-3xl bg-slate-50 p-5 text-center shadow-sm shadow-slate-200">
-            <p className="text-sm text-slate-500">Comfort</p>
-            <p className="mt-2 text-3xl font-semibold text-slate-900">Comfortable seat</p>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-3xl bg-white/10 p-5 backdrop-blur">
+              <p className="text-sm text-slate-200">Seat price</p>
+              <p className="mt-2 text-3xl font-semibold text-white">MWK 50</p>
+            </div>
+            <div className="rounded-3xl bg-white/10 p-5 backdrop-blur">
+              <p className="text-sm text-slate-200">Comfort</p>
+              <p className="mt-2 text-3xl font-semibold text-white">Comfortable seat</p>
+            </div>
+          </div>
+
+          <div className="mt-8 flex flex-col gap-4 sm:w-auto">
+            <Link
+              to="/register"
+              className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-semibold text-white shadow-lg shadow-primary/20 transition hover:bg-slate-900 sm:w-auto"
+            >
+              Register Now
+            </Link>
           </div>
         </div>
 
-        <div className="rounded-3xl bg-slate-50 p-5 text-center shadow-sm shadow-slate-200 w-full">
-          <p className="text-sm text-slate-500">Fast student trips</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">Mpoto Ride</p>
-        </div>
-
-        <div className="flex flex-col gap-4 w-full sm:w-auto">
-          <Link
-            to="/register"
-            className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-4 text-base font-semibold text-white shadow-lg shadow-primary/20 transition hover:bg-slate-900 sm:w-auto"
-          >
-            Register Now
-          </Link>
+        <div className="relative min-h-[360px] bg-slate-100">
+          <img
+            src="/bus-illustration.svg"
+            alt="Mpoto Ride bus illustration"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent" />
         </div>
       </div>
     </section>
