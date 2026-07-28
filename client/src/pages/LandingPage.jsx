@@ -32,13 +32,15 @@ function LandingPage() {
           </div>
         </div>
 
-        <div className="relative min-h-[360px] bg-slate-100">
-          <img
-            src="/bus-illustration.svg"
-            alt="Mpoto Ride bus illustration"
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/20 via-transparent to-transparent" />
+        <div className="m-4 rounded-[1.75rem] border border-slate-200 bg-white p-3 shadow-inner shadow-slate-200 sm:m-6 lg:m-8">
+          <div className="relative h-full min-h-[360px] overflow-hidden rounded-[1.25rem] bg-gradient-to-br from-slate-100 via-white to-slate-200">
+            <img
+              src="/bus-illustration.svg"
+              alt="Mpoto Ride bus illustration"
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/15 via-transparent to-transparent" />
+          </div>
         </div>
       </div>
     </section>
