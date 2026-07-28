@@ -5,19 +5,26 @@ function LandingPage() {
     <section className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-soft shadow-slate-200">
       <div className="relative min-h-[520px] overflow-hidden rounded-[2rem]">
         {/* Bus photo background — replace public/bus-photo.jpg with a real photo.
-            Until then this gradient stands in so the layout still reads correctly. */}
-        <div
-          className="absolute inset-0 bg-cover"
-          style={{
-            backgroundPosition: 'center 20%',
-            backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 30%, rgba(6,42,26,0.9) 100%), url('/bus-photo.jpg')`,
-            backgroundColor: '#e9f5ee', // soft green fallback while the photo loads or is missing
-          }}
-        />
+            Uses object-contain so the whole bus stays visible with no cropping;
+            the green fill shows in any empty space around it. */}
+        <div className="absolute inset-0 bg-emerald-800">
+          <img
+            src="/bus-photo.jpg"
+            alt=""
+            className="h-full w-full object-contain"
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(to bottom, rgba(6,42,26,0.15) 0%, rgba(6,42,26,0.1) 30%, rgba(6,42,26,0.75) 100%)',
+            }}
+          />
+        </div>
 
         {/* Content sits on top of the photo */}
         <div className="relative flex min-h-[520px] flex-col justify-between p-8 sm:p-10 lg:p-12">
-          <div className="max-w-xl space-y-4 rounded-3xl bg-white/85 p-6 text-left shadow-sm backdrop-blur-sm sm:p-7">
+          <div className="max-w-xl space-y-4 rounded-3xl bg-white/60 p-6 text-left shadow-sm backdrop-blur-sm sm:p-7">
             <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-700">
               Achina luwe
             </p>
@@ -31,12 +38,12 @@ function LandingPage() {
 
           <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-3xl bg-white/90 p-5 shadow-sm backdrop-blur">
-                <p className="text-sm text-slate-500">Seat price</p>
+              <div className="rounded-3xl bg-white/60 p-5 shadow-sm backdrop-blur-sm">
+                <p className="text-sm text-slate-600">Seat price</p>
                 <p className="mt-2 text-3xl font-semibold text-emerald-700">MWK 10,000</p>
               </div>
-              <div className="rounded-3xl bg-white/90 p-5 shadow-sm backdrop-blur">
-                <p className="text-sm text-slate-500">Comfort</p>
+              <div className="rounded-3xl bg-white/60 p-5 shadow-sm backdrop-blur-sm">
+                <p className="text-sm text-slate-600">Comfort</p>
                 <p className="mt-2 text-2xl font-semibold text-slate-900">Comfortable seat</p>
               </div>
             </div>
