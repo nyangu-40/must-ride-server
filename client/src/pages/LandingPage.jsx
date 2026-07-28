@@ -4,46 +4,37 @@ function LandingPage() {
   return (
     <section className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-soft shadow-slate-200">
       <div className="relative min-h-[520px] overflow-hidden rounded-[2rem]">
-        {/* Bus photo background — save the new photo as public/bus-photo.jpg.
-            object-cover fills the whole card edge-to-edge (no letterboxing);
-            scale-x-[-1] mirrors it to face the opposite direction. */}
-        <div className="absolute inset-0">
+        {/* Photo banner: sits only in the upper portion of the card, full width
+            edge-to-edge, with clear space between it and the text below. */}
+        <div className="relative h-56 w-full overflow-hidden sm:h-64 lg:h-72">
           <img
             src="/bus-photo.jpg"
             alt=""
             className="h-full w-full scale-x-[-1] object-cover"
           />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.05) 35%, rgba(6,78,44,0.55) 100%)',
-            }}
-          />
         </div>
 
-        {/* Content sits on top of the photo: welcome message top, price card in
-            the middle, services card + CTA at the bottom */}
-        <div className="relative flex min-h-[520px] flex-col justify-between p-8 sm:p-10 lg:p-12">
-          <div className="max-w-xl space-y-4 text-left" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.45)' }}>
-            <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-300">
+        {/* Text + cards zone: separate from the photo, centered */}
+        <div className="flex flex-col items-center gap-8 p-8 text-center sm:p-10 lg:p-12">
+          <div className="max-w-xl space-y-4">
+            <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-700">
               Achina luwe
             </p>
-            <h1 className="text-4xl font-semibold text-white sm:text-5xl">
+            <h1 className="text-4xl font-semibold text-slate-900 sm:text-5xl">
               Mpoto Ride
             </h1>
-            <p className="max-w-md text-lg text-white/90">
+            <p className="mx-auto max-w-md text-lg text-slate-700">
               Travel with Mpoto Ride for comfortable student transport and fast online booking.
             </p>
           </div>
 
-          <div className="mx-auto w-full max-w-xs rounded-3xl bg-white/60 p-5 text-center shadow-sm backdrop-blur-sm">
+          <div className="w-full max-w-xs rounded-3xl bg-emerald-50 p-5 shadow-sm">
             <p className="text-sm text-slate-600">Seat price</p>
             <p className="mt-2 text-3xl font-semibold text-emerald-700">MWK 10,000</p>
           </div>
 
-          <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="rounded-3xl bg-white/60 p-5 shadow-sm backdrop-blur-sm">
+          <div className="flex w-full flex-col items-center gap-6 sm:flex-row sm:justify-center">
+            <div className="rounded-3xl bg-emerald-50 p-5 shadow-sm">
               <p className="text-sm text-slate-600">On board</p>
               <ul className="mt-2 space-y-1">
                 <li className="text-lg font-semibold text-slate-900">Comfortable seat</li>
