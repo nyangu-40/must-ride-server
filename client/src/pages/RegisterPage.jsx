@@ -114,8 +114,8 @@ function RegisterPage() {
           {/* header: stays fixed at the top, never scrolls away */}
           <div className="shrink-0 border-b border-slate-100 p-6 pb-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Select seats</h3>
-              <button type="button" onClick={onClose} className="text-sm text-slate-600">Close</button>
+              <h3 className="text-lg font-semibold text-slate-900">Select seats</h3>
+              <button type="button" onClick={onClose} className="text-sm text-emerald-700">Close</button>
             </div>
             <p className="text-sm text-slate-500 mt-2">Tap a seat to select it. First selected seat becomes the payer.</p>
           </div>
@@ -174,7 +174,7 @@ function RegisterPage() {
             </div>
 
             <div className="mt-4 flex justify-end gap-3">
-              <button type="button" onClick={onClose} className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold">Done</button>
+              <button type="button" onClick={onClose} className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100">Done</button>
             </div>
           </div>
         </div>
@@ -239,6 +239,7 @@ function RegisterPage() {
   return (
     <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
       <div className="mb-8 space-y-3 text-center">
+        <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-700">Mpoto Ride</p>
         <h2 className="text-3xl font-semibold text-slate-900">Complete your booking</h2>
         <p className="text-slate-600">Select seats, add names for additional passengers, then proceed to payment.</p>
       </div>
@@ -253,7 +254,7 @@ function RegisterPage() {
               value={form.fullname}
               onChange={handleChange}
               required
-              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-primary"
+              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
               placeholder="Nyangu"
             />
           </label>
@@ -265,7 +266,7 @@ function RegisterPage() {
               value={form.phone}
               onChange={handleChange}
               required
-              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-primary"
+              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
               placeholder="+265 999 123 456"
             />
           </label>
@@ -280,7 +281,7 @@ function RegisterPage() {
               value={form.pickup_location}
               onChange={handleChange}
               required
-              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-primary"
+              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
               placeholder="Mzuzu Campus"
             />
           </label>
@@ -292,19 +293,19 @@ function RegisterPage() {
               value={form.destination}
               onChange={handleChange}
               required
-              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-primary"
+              className="mt-2 w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
               placeholder="Town Center"
             />
           </label>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+        <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div>
               <p className="text-sm font-medium text-slate-700">Choose your seats</p>
               <p className="mt-1 text-sm text-slate-500">Click to select the seat(s) you want. The first selected seat will be assigned to the payer.</p>
             </div>
-            <div className="self-start whitespace-nowrap rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
+            <div className="self-start whitespace-nowrap rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
               {selectedSeats.length} seat{selectedSeats.length === 1 ? '' : 's'} selected
             </div>
           </div>
@@ -313,7 +314,7 @@ function RegisterPage() {
             <button
               type="button"
               onClick={() => setShowSeatMap(true)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50 sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-3xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 sm:w-auto"
             >
               Open seat map
             </button>
@@ -324,7 +325,7 @@ function RegisterPage() {
         </div>
 
         {selectedSeats.length > 1 && (
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
+          <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-6">
             <p className="mb-4 text-sm font-medium text-slate-700">Passenger names for additional seats</p>
             <div className="grid gap-4">
               {selectedSeats.slice(1).map((seat) => (
@@ -336,7 +337,7 @@ function RegisterPage() {
                     value={passengerNames[seat] || ''}
                     onChange={handlePassengerNameChange}
                     required
-                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-primary"
+                    className="mt-2 w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500"
                     placeholder={`Passenger name for seat ${seat}`}
                   />
                 </label>
@@ -351,9 +352,9 @@ function RegisterPage() {
             <p className="mt-3 text-slate-600">Seats selected: {selectedSeats.length}</p>
             <p className="mt-2 text-slate-600">Passengers: {selectedSeats.length > 0 ? selectedSeats.length : 0}</p>
           </div>
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-4">
             <p className="text-sm font-medium text-slate-700">Total Amount</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-900">{formatCurrency(totalAmount)}</p>
+            <p className="mt-3 text-3xl font-semibold text-emerald-700">{formatCurrency(totalAmount)}</p>
           </div>
         </div>
 
@@ -362,7 +363,7 @@ function RegisterPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex w-full justify-center rounded-full bg-primary px-6 py-4 text-base font-semibold text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full justify-center rounded-full bg-emerald-600 px-6 py-4 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? 'Redirecting to PayChangu...' : 'Proceed to Payment'}
         </button>
