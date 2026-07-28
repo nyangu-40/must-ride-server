@@ -9,17 +9,23 @@ if (!PAYCHANGU_SECRET_KEY) {
 }
 
 export async function createPaychanguCheckout({ fullName, email, phone, amount, reference }) {
-  const receiptPath = `/receipt/${reference}`;
-  const successUrl = `${SERVER_URL}/api/payment/success/${reference}`;
-  const cancelUrl = `${SERVER_URL}/api/payment/cancel/${reference}`;
+  // callback_url: PayChangu calls this SERVER-TO-SERVER once payment finishes,
+  // regardless of whether the browser ever comes back. This must point at
+  // the actual signed webhook route, not a browser-redirect route.
+  const webhookUrl = `${SERVER_URL}/webhook/paychangu`;
+
+  // return_url: where PayChangu sends the person's BROWSER after checkout.
+  // Send them straight to the frontend receipt page — the webhook (above)
+  // is what actually confirms and marks the registration Paid; this URL
+  // is just where the person lands to view it.
+  const returnUrl = `${FRONTEND_URL}/#/receipt/${reference}?status=success`;
 
   const payload = {
     amount,
     currency: 'MWK',
     tx_ref: reference,
-    callback_url: successUrl,
-    return_url: successUrl,
-    cancel_url: cancelUrl,
+    callback_url: webhookUrl,
+    return_url: returnUrl,
     first_name: fullName.split(' ')[0],
     last_name: fullName.split(' ').slice(1).join(' ') || fullName.split(' ')[0],
     email: email || 'customer@example.com',
