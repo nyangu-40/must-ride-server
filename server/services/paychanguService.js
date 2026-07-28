@@ -10,7 +10,7 @@ if (!PAYCHANGU_SECRET_KEY) {
 
 export async function createPaychanguCheckout({ fullName, email, phone, amount, reference }) {
   const receiptPath = `/receipt/${reference}`;
-  const receiptUrl = `${FRONTEND_URL}/#/receipt/${reference}`;
+  const receiptUrl = `${FRONTEND_URL}/#/receipt/${reference}?status=success`;
 
   const payload = {
     amount,

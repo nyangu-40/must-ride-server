@@ -8,6 +8,7 @@ router.get('/registrations', adminAuth, registrationController.getAllRegistratio
 router.get('/registration/:id', adminAuth, registrationController.getRegistrationById);
 router.patch('/registration/:id/status', adminAuth, registrationController.updateRegistrationStatus);
 router.get('/registration/:id/receipt', registrationController.getReceiptById);
+router.post('/registration/:id/confirm-payment', registrationController.confirmPayment);
 router.get('/seats', registrationController.getTakenSeats);
 router.post('/register', registrationController.createRegistration);
 router.post('/payment', registrationController.createPayment);

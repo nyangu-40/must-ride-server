@@ -13,7 +13,7 @@ function LandingPage() {
         <div className="grid w-full gap-4 sm:grid-cols-2">
           <div className="rounded-3xl bg-slate-50 p-5 text-center shadow-sm shadow-slate-200">
             <p className="text-sm text-slate-500">Seat price</p>
-            <p className="mt-2 text-3xl font-semibold text-slate-900">MWK 100</p>
+            <p className="mt-2 text-3xl font-semibold text-slate-900">MWK 10,000</p>
           </div>
           <div className="rounded-3xl bg-slate-50 p-5 text-center shadow-sm shadow-slate-200">
             <p className="text-sm text-slate-500">Comfort</p>

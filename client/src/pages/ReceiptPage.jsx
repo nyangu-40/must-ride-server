@@ -8,11 +8,24 @@ function ReceiptPage() {
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
   useEffect(() => {
     async function loadReceipt() {
       try {
         setIsLoading(true);
+        setError('');
+
+        const hash = window.location.hash || '';
+        const queryString = hash.includes('?') ? hash.split('?').slice(1).join('?') : '';
+        const params = new URLSearchParams(queryString);
+        const shouldConfirm = params.get('status') === 'success' || params.get('payment') === 'success';
+
+        if (shouldConfirm) {
+          await api.post(`/api/registration/${id}/confirm-payment`, { payment_reference: id });
+          setPaymentConfirmed(true);
+        }
+
         const response = await api.get(`/api/registration/${id}/receipt`);
         setReceipt(response.data.receipt);
       } catch (err) {
@@ -55,6 +68,12 @@ function ReceiptPage() {
         <h2 className="text-3xl font-semibold text-slate-900">Booking receipt</h2>
         <p className="text-slate-600">Use this receipt as proof of payment for your seats.</p>
       </div>
+
+      {paymentConfirmed && (
+        <div className="mb-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
+          Payment completed successfully. Your receipt is ready.
+        </div>
+      )}
 
       <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">

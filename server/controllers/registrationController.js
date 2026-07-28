@@ -144,6 +144,23 @@ export async function createPayment(req, res, next) {
   }
 }
 
+export async function confirmPayment(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { payment_reference } = req.body || {};
+
+    const updated = await updateRegistrationPaymentStatus(id, {
+      payment_status: 'Paid',
+      payment_reference: payment_reference || null,
+      payment_date: new Date().toISOString(),
+    });
+
+    res.json({ success: true, registration: updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getTakenSeats(req, res, next) {
   try {
     const seats = await fetchTakenSeats();
