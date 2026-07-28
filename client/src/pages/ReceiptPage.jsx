@@ -17,13 +17,18 @@ function ReceiptPage() {
         setError('');
 
         const hash = window.location.hash || '';
-        const queryString = hash.includes('?') ? hash.split('?').slice(1).join('?') : '';
-        const params = new URLSearchParams(queryString);
-        const shouldConfirm = params.get('status') === 'success' || params.get('payment') === 'success';
+        const hashWithoutHash = hash.startsWith('#') ? hash.slice(1) : hash;
+        const rawQuery = hashWithoutHash.includes('?') ? hashWithoutHash.split('?').slice(1).join('?') : window.location.search?.replace(/^\?/, '') || '';
+        const params = new URLSearchParams(rawQuery);
+        const shouldConfirm = params.get('status') === 'success' || params.get('payment') === 'success' || params.get('confirmed') === 'true';
 
         if (shouldConfirm) {
-          await api.post(`/api/registration/${id}/confirm-payment`, { payment_reference: id });
-          setPaymentConfirmed(true);
+          try {
+            await api.post(`/api/registration/${id}/confirm-payment`, { payment_reference: id });
+            setPaymentConfirmed(true);
+          } catch (confirmError) {
+            console.warn('Unable to confirm payment from receipt page', confirmError);
+          }
         }
 
         const response = await api.get(`/api/registration/${id}/receipt`);

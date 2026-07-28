@@ -7,7 +7,7 @@ import {
   updatePaymentStatus as updateRegistrationPaymentStatus,
 } from '../services/registrationService.js';
 import { createPaychanguCheckout } from '../services/paychanguService.js';
-import { PRICE_PER_SEAT } from '../config/index.js';
+import { FRONTEND_URL, PRICE_PER_SEAT } from '../config/index.js';
 
 const registrationSchema = Joi.object({
   fullname: Joi.string().trim().min(3).required(),
@@ -139,6 +139,32 @@ export async function createPayment(req, res, next) {
     });
 
     res.status(201).json({ checkoutUrl: checkout.checkout_url, registrationId: saved.id });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function handlePaymentSuccess(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { payment_reference } = req.query || {};
+
+    await updateRegistrationPaymentStatus(id, {
+      payment_status: 'Paid',
+      payment_reference: payment_reference || null,
+      payment_date: new Date().toISOString(),
+    });
+
+    return res.redirect(`${FRONTEND_URL}/#/receipt/${id}?status=success`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function handlePaymentCancel(req, res, next) {
+  try {
+    const { id } = req.params;
+    return res.redirect(`${FRONTEND_URL}/#/register`);
   } catch (err) {
     next(err);
   }

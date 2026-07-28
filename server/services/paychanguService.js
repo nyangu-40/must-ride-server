@@ -1,6 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { PAYCHANGU_SECRET_KEY, PAYCHANGU_WEBHOOK_SECRET, FRONTEND_URL } from '../config/index.js';
+import { PAYCHANGU_SECRET_KEY, PAYCHANGU_WEBHOOK_SECRET, FRONTEND_URL, SERVER_URL } from '../config/index.js';
 
 const PAYCHANGU_API_URL = 'https://api.paychangu.com/payment';
 
@@ -10,14 +10,16 @@ if (!PAYCHANGU_SECRET_KEY) {
 
 export async function createPaychanguCheckout({ fullName, email, phone, amount, reference }) {
   const receiptPath = `/receipt/${reference}`;
-  const receiptUrl = `${FRONTEND_URL}/#/receipt/${reference}?status=success`;
+  const successUrl = `${SERVER_URL}/api/payment/success/${reference}`;
+  const cancelUrl = `${SERVER_URL}/api/payment/cancel/${reference}`;
 
   const payload = {
     amount,
     currency: 'MWK',
     tx_ref: reference,
-    callback_url: receiptUrl,
-    return_url: receiptUrl,
+    callback_url: successUrl,
+    return_url: successUrl,
+    cancel_url: cancelUrl,
     first_name: fullName.split(' ')[0],
     last_name: fullName.split(' ').slice(1).join(' ') || fullName.split(' ')[0],
     email: email || 'customer@example.com',
