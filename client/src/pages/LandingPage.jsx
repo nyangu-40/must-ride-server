@@ -36,9 +36,9 @@ function LandingPage() {
   return (
     <section className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-soft shadow-slate-200">
       <div className="flex min-h-[420px] flex-col overflow-hidden rounded-[2rem]">
-        {/* Photo section: roughly half the card, full width. A gradient at its
-            base fades into the same green used below, so the transition from
-            photo to color is seamless rather than a hard cut. */}
+        {/* Photo section: roughly half the card, full width. The headline
+            sits directly on the photo, positioned low where the gradient is
+            darkest so the white text stays readable against the bus. */}
         <div className="relative flex-1 overflow-hidden">
           <img
             src="/bus-photo.jpg"
@@ -49,19 +49,12 @@ function LandingPage() {
             className="absolute inset-0"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(4,120,87,0) 55%, rgba(4,120,87,1) 100%)',
+                'linear-gradient(to bottom, rgba(4,120,87,0) 40%, rgba(4,120,87,0.85) 100%)',
             }}
           />
-        </div>
-
-        {/* Text + cards section: solid green, continuing the color the photo
-            fades into. Content starts right at the top of this section
-            instead of centering, so there's no extra empty space to scroll
-            past. */}
-        <div className="flex flex-1 flex-col items-center gap-8 bg-emerald-700 px-8 pb-10 pt-6 text-center sm:px-10 sm:pt-8 lg:px-12">
           <div
             ref={headline.ref}
-            className={`max-w-xl space-y-4 transition-all duration-700 ease-out ${
+            className={`absolute inset-x-0 bottom-0 space-y-3 p-6 text-center transition-all duration-700 ease-out sm:p-8 ${
               headline.visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
             }`}
           >
@@ -75,7 +68,11 @@ function LandingPage() {
               Travel with Mpoto Ride for comfortable student transport and fast online booking.
             </p>
           </div>
+        </div>
 
+        {/* Cards section: solid green, continuing the color the photo fades
+            into. Only the price and services cards live here now. */}
+        <div className="flex flex-1 flex-col items-center gap-8 bg-emerald-700 px-8 pb-10 pt-8 text-center sm:px-10 lg:px-12">
           <div
             ref={priceCard.ref}
             className={`w-full max-w-xs rounded-3xl bg-white/90 p-5 shadow-sm transition-all duration-700 ease-out delay-150 ${
