@@ -241,7 +241,13 @@ function RegisterPage() {
   };
 
   return (
-    <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
+    <section className="mx-auto max-w-3xl overflow-hidden rounded-3xl bg-white shadow-soft shadow-slate-200">
+      {/* Photo banner — reuses the same bus photo as the landing page */}
+      <div className="h-40 w-full overflow-hidden sm:h-48">
+        <img src="/bus-photo.jpg" alt="" className="h-full w-full object-cover" />
+      </div>
+
+      <div className="p-8">
       <div className="mb-8 space-y-3 text-center">
         <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-700">Mpoto Ride</p>
         <h2 className="text-3xl font-semibold text-slate-900">Complete your booking</h2>
@@ -375,6 +381,7 @@ function RegisterPage() {
           {isSubmitting ? 'Redirecting to PayChangu...' : 'Proceed to Payment'}
         </button>
       </form>
+      </div>
     </section>
   );
 }

@@ -109,6 +109,53 @@ function AdminPage() {
     document.body.removeChild(link);
   };
 
+  const escapeHtml = (value) =>
+    String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const downloadWord = () => {
+    const headers = ['Payer', 'Phone', 'Pickup', 'Destination', 'Selected Seats', 'Passengers', 'Amount', 'Status'];
+
+    const headerRow = headers.map((h) => `<th style="border:1px solid #ccc;padding:8px;background:#f1f5f9;text-align:left;">${h}</th>`).join('');
+
+    const bodyRows = filtered
+      .map((item) => {
+        const cells = [
+          item.fullname,
+          item.phone,
+          item.pickup_location,
+          item.destination,
+          item.selected_seats?.join(', ') || '',
+          formatPassengers(item),
+          formatCurrency(item.amount),
+          item.payment_status,
+        ];
+        return `<tr>${cells.map((c) => `<td style="border:1px solid #ccc;padding:8px;">${escapeHtml(c)}</td>`).join('')}</tr>`;
+      })
+      .join('');
+
+    const html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="utf-8"><title>Mpoto Ride Registrations</title></head>
+        <body>
+          <h2>Mpoto Ride — Registrations</h2>
+          <table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:12px;">
+            <thead><tr>${headerRow}</tr></thead>
+            <tbody>${bodyRows}</tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'must-ride-registrations.doc');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <section className="mx-auto max-w-6xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
       {!token ? (
@@ -157,6 +204,13 @@ function AdminPage() {
                 className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-900"
               >
                 Download CSV
+              </button>
+              <button
+                type="button"
+                onClick={downloadWord}
+                className="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+              >
+                Download Word
               </button>
               <button
                 type="button"
