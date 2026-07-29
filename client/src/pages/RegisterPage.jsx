@@ -242,19 +242,24 @@ function RegisterPage() {
 
   return (
     <section className="mx-auto max-w-3xl overflow-hidden rounded-3xl bg-white shadow-soft shadow-slate-200">
-      {/* Photo banner — reuses the same bus photo as the landing page */}
-      <div className="h-40 w-full overflow-hidden sm:h-48">
+      {/* Photo banner with the heading overlaid directly on it */}
+      <div className="relative h-64 w-full overflow-hidden sm:h-72">
         <img src="/bus-photo.jpg" alt="" className="h-full w-full object-cover" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.1) 30%, rgba(4,120,87,0.85) 100%)',
+          }}
+        />
+        <div className="absolute inset-x-0 bottom-0 space-y-2 p-6 text-center sm:p-8">
+          <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-100">Mpoto Ride</p>
+          <h2 className="text-3xl font-semibold text-white">Complete your booking</h2>
+          <p className="mx-auto max-w-md text-white/90">Select seats, add names for additional passengers, then proceed to payment.</p>
+        </div>
       </div>
 
       <div className="p-8">
-      <div className="mb-8 space-y-3 text-center">
-        <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-700">Mpoto Ride</p>
-        <h2 className="text-3xl font-semibold text-slate-900">Complete your booking</h2>
-        <p className="text-slate-600">Select seats, add names for additional passengers, then proceed to payment.</p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid gap-6 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Full Name</span>
