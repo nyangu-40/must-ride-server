@@ -1,6 +1,6 @@
 import axios from 'axios';
 import crypto from 'crypto';
-import { PAYCHANGU_SECRET_KEY, PAYCHANGU_WEBHOOK_SECRET, FRONTEND_URL, SERVER_URL } from '../config/index.js';
+import { PAYCHANGU_SECRET_KEY, PAYCHANGU_WEBHOOK_SECRET, FRONTEND_URL } from '../config/index.js';
 
 const PAYCHANGU_API_URL = 'https://api.paychangu.com/payment';
 
@@ -9,24 +9,15 @@ if (!PAYCHANGU_SECRET_KEY) {
 }
 
 export async function createPaychanguCheckout({ fullName, email, phone, amount, reference }) {
-  // callback_url: PayChangu calls this SERVER-TO-SERVER after payment finishes.
-  // Must be your real public backend URL — falls back to localhost if
-  // SERVER_URL isn't set as an env var on Render, which is exactly what
-  // caused the broken redirect you saw.
-  const webhookUrl = `${SERVER_URL}/webhook/paychangu`;
-
-  // return_url: where the person's BROWSER lands after checkout.
-  const returnUrl = `${FRONTEND_URL}/#/receipt/${reference}?status=success`;
-
-  console.log('Using SERVER_URL:', SERVER_URL);
-  console.log('Using FRONTEND_URL:', FRONTEND_URL);
+  const receiptPath = `/receipt/${reference}`;
+  const receiptUrl = `${FRONTEND_URL}/#/receipt/${reference}`;
 
   const payload = {
     amount,
     currency: 'MWK',
     tx_ref: reference,
-    callback_url: webhookUrl,
-    return_url: returnUrl,
+    callback_url: receiptUrl,
+    return_url: receiptUrl,
     first_name: fullName.split(' ')[0],
     last_name: fullName.split(' ').slice(1).join(' ') || fullName.split(' ')[0],
     email: email || 'customer@example.com',
