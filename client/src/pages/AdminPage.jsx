@@ -76,6 +76,11 @@ function AdminPage() {
     setError('');
   };
 
+  const formatPassengers = (item) =>
+    item.passengers?.length > 0
+      ? item.passengers.map((p) => `Seat ${p.seat}: ${p.name}`).join('; ')
+      : item.fullname;
+
   const downloadCSV = () => {
     const headers = ['Full Name', 'Phone', 'Pickup', 'Destination', 'Seats', 'Selected Seats', 'Passengers', 'Amount', 'Status', 'Reference', 'Payment Date', 'Created At'];
     const rows = filtered.map((item) => [
@@ -85,7 +90,7 @@ function AdminPage() {
       item.destination,
       item.seats,
       item.selected_seats?.join(', ') || '',
-      item.passengers?.map((p) => `${p.seat}: ${p.name}`).join('; ') || '',
+      formatPassengers(item),
       item.amount,
       item.payment_status,
       item.payment_reference || '',
@@ -102,21 +107,6 @@ function AdminPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const updateStatus = async (id, paymentStatus) => {
-    try {
-      setError('');
-      await api.patch(`/api/registration/${id}/status`, { payment_status: paymentStatus }, {
-        headers: { 'x-admin-token': token },
-      });
-
-      setRegistrations((current) =>
-        current.map((item) => (item.id === id ? { ...item, payment_status: paymentStatus } : item))
-      );
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Unable to update payment status.');
-    }
   };
 
   return (
@@ -208,11 +198,12 @@ function AdminPage() {
           <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
-                <th className="px-5 py-4 font-medium">Name</th>
+                <th className="px-5 py-4 font-medium">Payer</th>
                 <th className="px-5 py-4 font-medium">Phone</th>
                 <th className="px-5 py-4 font-medium">Pickup</th>
                 <th className="px-5 py-4 font-medium">Destination</th>
-                <th className="px-5 py-4 font-medium">Seats</th>
+                <th className="px-5 py-4 font-medium">Selected seats</th>
+                <th className="px-5 py-4 font-medium">Passengers</th>
                 <th className="px-5 py-4 font-medium">Amount</th>
                 <th className="px-5 py-4 font-medium">Status</th>
               </tr>
@@ -224,36 +215,33 @@ function AdminPage() {
                   <td className="px-5 py-4 text-slate-600">{registration.phone}</td>
                   <td className="px-5 py-4 text-slate-600">{registration.pickup_location}</td>
                   <td className="px-5 py-4 text-slate-600">{registration.destination}</td>
-                  <td className="px-5 py-4 text-slate-600">{registration.seats}</td>
+                  <td className="px-5 py-4 text-slate-600">
+                    {registration.selected_seats?.join(', ') || '—'}
+                  </td>
+                  <td className="px-5 py-4 text-slate-600">
+                    {registration.passengers?.length > 0 ? (
+                      <ul className="space-y-0.5">
+                        {registration.passengers.map((p) => (
+                          <li key={p.seat}>
+                            <span className="font-medium text-slate-800">Seat {p.seat}:</span> {p.name}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td className="px-5 py-4 text-slate-800">{formatCurrency(registration.amount)}</td>
                   <td className="px-5 py-4">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${registration.payment_status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {registration.payment_status}
-                      </span>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => updateStatus(registration.id, 'Paid')}
-                          className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
-                        >
-                          Mark paid
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => updateStatus(registration.id, 'Pending')}
-                          className="rounded-full border border-amber-200 px-3 py-1 text-xs font-semibold text-amber-700 transition hover:bg-amber-50"
-                        >
-                          Mark pending
-                        </button>
-                      </div>
-                    </div>
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${registration.payment_status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {registration.payment_status}
+                    </span>
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="px-5 py-10 text-center text-slate-500">
+                  <td colSpan="8" className="px-5 py-10 text-center text-slate-500">
                     No registrations found.
                   </td>
                 </tr>

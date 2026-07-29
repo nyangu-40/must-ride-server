@@ -3,7 +3,7 @@ import api from '../services/api.js';
 import { formatCurrency } from '../utils/formatters.js';
 
 const PRICE_PER_SEAT = 50;
-const SEAT_COUNT = 72;
+const SEAT_COUNT = 66;
 const seatLabels = Array.from({ length: SEAT_COUNT }, (_, index) => (index + 1).toString());
 
 // Replace these with your actual pickup points and default destination.

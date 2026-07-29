@@ -8,7 +8,6 @@ function ReceiptPage() {
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
 
   useEffect(() => {
     async function loadReceipt() {
@@ -25,7 +24,6 @@ function ReceiptPage() {
         if (shouldConfirm) {
           try {
             await api.post(`/api/registration/${id}/confirm-payment`, { payment_reference: id });
-            setPaymentConfirmed(true);
           } catch (confirmError) {
             console.warn('Unable to confirm payment from receipt page', confirmError);
           }
@@ -47,7 +45,7 @@ function ReceiptPage() {
 
   if (isLoading) {
     return (
-      <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200 text-center">
+      <section className="mx-auto max-w-2xl rounded-3xl bg-white p-6 shadow-soft shadow-slate-200 text-center">
         <p className="text-slate-600">Loading receipt...</p>
       </section>
     );
@@ -55,10 +53,10 @@ function ReceiptPage() {
 
   if (error) {
     return (
-      <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
-        <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">{error}</div>
-        <div className="mt-6 text-center">
-          <Link to="/register" className="inline-flex rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-900">
+      <section className="mx-auto max-w-2xl rounded-3xl bg-white p-6 shadow-soft shadow-slate-200">
+        <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+        <div className="mt-4 text-center">
+          <Link to="/register" className="inline-flex rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
             Back to booking
           </Link>
         </div>
@@ -66,101 +64,85 @@ function ReceiptPage() {
     );
   }
 
+  const isPaid = receipt.payment_status === 'Paid';
+
   return (
-    <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
-      <div className="mb-8 space-y-3 text-center">
-        <p className="text-sm uppercase tracking-[0.3em] text-secondary">Payment Receipt</p>
-        <h2 className="text-3xl font-semibold text-slate-900">Booking receipt</h2>
-        <p className="text-slate-600">Use this receipt as proof of payment for your seats.</p>
-      </div>
-
-      {paymentConfirmed && (
-        <div className="mb-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
-          Payment completed successfully. Your receipt is ready.
-        </div>
-      )}
-
-      <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
+    <section className="mx-auto max-w-2xl overflow-hidden rounded-3xl bg-white shadow-soft shadow-slate-200">
+      {/* Landscape ticket layout: a stub on the left with the essentials
+          (name, phone, seats), main details on the right. */}
+      <div className="flex flex-col sm:flex-row">
+        {/* Stub */}
+        <div className="flex shrink-0 flex-col justify-between gap-4 bg-emerald-700 p-5 text-white sm:w-48">
           <div>
-            <p className="text-sm text-slate-500">Payer</p>
-            <p className="mt-1 font-semibold text-slate-900">{receipt.fullname}</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500">Phone</p>
-            <p className="mt-1 font-semibold text-slate-900">{receipt.phone}</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500">Pickup</p>
-            <p className="mt-1 font-semibold text-slate-900">{receipt.pickup_location}</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500">Destination</p>
-            <p className="mt-1 font-semibold text-slate-900">{receipt.destination}</p>
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="text-sm text-slate-500">Selected seats</p>
-            <p className="mt-1 font-semibold text-slate-900">{receipt.selected_seats?.join(', ') || 'None'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500">Total paid</p>
-            <p className="mt-1 text-3xl font-semibold text-slate-900">{formatCurrency(receipt.amount)}</p>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-sm text-slate-500">Passengers</p>
-          <div className="mt-2 rounded-3xl bg-white p-4 text-sm text-slate-700">
-            {receipt.passengers?.length > 0 ? (
-              <ul className="space-y-2">
-                {receipt.passengers.map((passenger) => (
-                  <li key={passenger.seat}>
-                    <span className="font-semibold text-slate-900">Seat {passenger.seat}:</span> {passenger.name}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No passenger details available.</p>
-            )}
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="text-sm text-slate-500">Status</p>
-            <p className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${receipt.payment_status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+            <p className="text-xs font-medium uppercase tracking-[0.2em] text-emerald-100">Mpoto Ride</p>
+            <p
+              className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                isPaid ? 'bg-white text-emerald-700' : 'bg-amber-100 text-amber-700'
+              }`}
+            >
               {receipt.payment_status}
             </p>
           </div>
           <div>
-            <p className="text-sm text-slate-500">Payment ref</p>
-            <p className="mt-1 font-semibold text-slate-900">{receipt.payment_reference || 'Not available'}</p>
+            <p className="text-xs text-emerald-100">Total paid</p>
+            <p className="text-2xl font-semibold">{formatCurrency(receipt.amount)}</p>
           </div>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6">
-          <p className="text-sm text-slate-500">Receipt signature</p>
-          <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-slate-500">
-            <p className="text-lg font-semibold text-slate-900">Authorized signature</p>
-            <p className="mt-2">_____________________________</p>
+        {/* Main details */}
+        <div className="flex-1 border-t border-dashed border-slate-200 p-5 sm:border-l sm:border-t-0">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-3">
+            <div>
+              <p className="text-xs text-slate-500">Name</p>
+              <p className="font-semibold text-slate-900">{receipt.fullname}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Phone</p>
+              <p className="font-semibold text-slate-900">{receipt.phone}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Seats</p>
+              <p className="font-semibold text-slate-900">{receipt.selected_seats?.join(', ') || 'None'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Pickup</p>
+              <p className="font-semibold text-slate-900">{receipt.pickup_location}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Destination</p>
+              <p className="font-semibold text-slate-900">{receipt.destination}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">Ref</p>
+              <p className="truncate font-semibold text-slate-900">{receipt.payment_reference || '—'}</p>
+            </div>
+          </div>
+
+          {receipt.passengers?.length > 1 && (
+            <div className="mt-4 border-t border-slate-100 pt-3">
+              <p className="text-xs text-slate-500">Passengers</p>
+              <p className="mt-1 text-sm text-slate-700">
+                {receipt.passengers.map((p) => `Seat ${p.seat}: ${p.name}`).join(' · ')}
+              </p>
+            </div>
+          )}
+
+          <div className="mt-5 flex gap-3">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex flex-1 items-center justify-center rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 sm:flex-none"
+            >
+              Print
+            </button>
+            <Link
+              to="/register"
+              className="inline-flex flex-1 items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 sm:flex-none"
+            >
+              Book another
+            </Link>
           </div>
         </div>
-      </div>
-
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="inline-flex justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-900"
-        >
-          Print receipt
-        </button>
-        <Link to="/register" className="inline-flex justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">
-          Book another ride
-        </Link>
       </div>
     </section>
   );
