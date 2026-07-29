@@ -7,7 +7,7 @@ import {
   updatePaymentStatus as updateRegistrationPaymentStatus,
 } from '../services/registrationService.js';
 import { createPaychanguCheckout } from '../services/paychanguService.js';
-import { PRICE_PER_SEAT } from '../config/index.js';
+import { FRONTEND_URL, PRICE_PER_SEAT } from '../config/index.js';
 
 const registrationSchema = Joi.object({
   fullname: Joi.string().trim().min(3).required(),
@@ -139,6 +139,55 @@ export async function createPayment(req, res, next) {
     });
 
     res.status(201).json({ checkoutUrl: checkout.checkout_url, registrationId: saved.id });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Called by the frontend ReceiptPage as a fallback confirmation when the
+// browser lands back on the receipt page with ?status=success. The webhook
+// (webhookController.js) is the primary/reliable path; this exists in case
+// the webhook is delayed and the page loads before it lands.
+export async function confirmPayment(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { payment_reference } = req.body || {};
+
+    const updated = await updateRegistrationPaymentStatus(id, {
+      payment_status: 'Paid',
+      payment_reference: payment_reference || null,
+      payment_date: new Date().toISOString(),
+    });
+
+    res.json({ success: true, registration: updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Kept for backward compatibility in case anything still links here, but
+// callback_url/return_url no longer point at these — the webhook and the
+// frontend receipt page handle the real flow now.
+export async function handlePaymentSuccess(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { payment_reference } = req.query || {};
+
+    await updateRegistrationPaymentStatus(id, {
+      payment_status: 'Paid',
+      payment_reference: payment_reference || null,
+      payment_date: new Date().toISOString(),
+    });
+
+    return res.redirect(`${FRONTEND_URL}/#/receipt/${id}?status=success`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function handlePaymentCancel(req, res, next) {
+  try {
+    return res.redirect(`${FRONTEND_URL}/#/register`);
   } catch (err) {
     next(err);
   }
