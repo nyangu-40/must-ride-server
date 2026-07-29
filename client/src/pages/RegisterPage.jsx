@@ -2,12 +2,12 @@ import { useMemo, useState, useEffect } from 'react';
 import api from '../services/api.js';
 import { formatCurrency } from '../utils/formatters.js';
 
-const PRICE_PER_SEAT = 50;
+const PRICE_PER_SEAT = 10000;
 const SEAT_COUNT = 66;
 const seatLabels = Array.from({ length: SEAT_COUNT }, (_, index) => (index + 1).toString());
 
 // Replace these with your actual pickup points and default destination.
-const PICKUP_LOCATIONS = ['Mzuzu Depot', 'Mzimba Boma', 'Jender', 'Champhila'];
+const PICKUP_LOCATIONS = ['Mzuzu Depot', 'Mzimba Boma', 'Jenda', 'Champhila'];
 const DEFAULT_DESTINATION = 'MUST';
 
 function RegisterPage() {
