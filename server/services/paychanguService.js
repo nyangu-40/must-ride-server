@@ -3,22 +3,18 @@ import crypto from 'crypto';
 import { PAYCHANGU_SECRET_KEY, PAYCHANGU_WEBHOOK_SECRET, FRONTEND_URL, SERVER_URL } from '../config/index.js';
 
 const PAYCHANGU_API_URL = 'https://api.paychangu.com/payment';
+const PAYCHANGU_VERIFY_URL = 'https://api.paychangu.com/verify-payment';
 
 if (!PAYCHANGU_SECRET_KEY) {
   throw new Error('PayChangu secret key is required.');
 }
 
 export async function createPaychanguCheckout({ fullName, email, phone, amount, reference }) {
-  // callback_url: PayChangu calls this SERVER-TO-SERVER once payment finishes,
-  // regardless of whether the browser ever comes back. This must point at
-  // the actual signed webhook route, not a browser-redirect route.
   const webhookUrl = `${SERVER_URL}/webhook/paychangu`;
-
-  // return_url: where PayChangu sends the person's BROWSER after checkout.
-  // Send them straight to the frontend receipt page — the webhook (above)
-  // is what actually confirms and marks the registration Paid; this URL
-  // is just where the person lands to view it.
   const returnUrl = `${FRONTEND_URL}/#/receipt/${reference}?status=success`;
+
+  console.log('Using SERVER_URL:', SERVER_URL);
+  console.log('Using FRONTEND_URL:', FRONTEND_URL);
 
   const payload = {
     amount,
@@ -51,6 +47,27 @@ export async function createPaychanguCheckout({ fullName, email, phone, amount, 
 
   const checkoutUrl = response.data.data.checkout_url;
   return { checkout_url: checkoutUrl, raw: response.data };
+}
+
+// Re-verifies a transaction directly with PayChangu's API rather than
+// trusting a redirect query param alone. Returns { isPaid, amount, currency, raw }.
+export async function verifyPaychanguPayment(txRef) {
+  const response = await axios.get(`${PAYCHANGU_VERIFY_URL}/${txRef}`, {
+    headers: {
+      Authorization: `Bearer ${PAYCHANGU_SECRET_KEY}`,
+      Accept: 'application/json',
+    },
+  });
+
+  const data = response.data?.data;
+  const isPaid = !!data && data.status === 'success' && data.tx_ref === txRef;
+
+  return {
+    isPaid,
+    amount: data?.amount ?? null,
+    currency: data?.currency ?? null,
+    raw: response.data,
+  };
 }
 
 export function verifyWebhookSignature(payload, signature) {
