@@ -244,7 +244,7 @@ function RegisterPage() {
     <section className="mx-auto max-w-3xl overflow-hidden rounded-3xl bg-white shadow-soft shadow-slate-200">
       {/* Photo banner with the heading overlaid directly on it */}
       <div className="relative h-64 w-full overflow-hidden sm:h-72">
-        <img src="/bus-photo.jpg" alt="" className="h-full w-full object-cover" />
+        <img src="/bus-photo1.jpg.png" alt="" className="h-full w-full object-cover" />
         <div
           className="absolute inset-0"
           style={{
