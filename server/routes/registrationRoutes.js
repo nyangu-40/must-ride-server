@@ -7,6 +7,7 @@ const router = express.Router();
 router.get('/registrations', adminAuth, registrationController.getAllRegistrations);
 router.get('/registration/:id', adminAuth, registrationController.getRegistrationById);
 router.patch('/registration/:id/status', adminAuth, registrationController.updateRegistrationStatus);
+router.delete('/registration/:id', adminAuth, registrationController.deleteRegistration);
 router.get('/registration/:id/receipt', registrationController.getReceiptById);
 router.post('/registration/:id/confirm-payment', registrationController.confirmPayment);
 router.get('/payment/success/:id', registrationController.handlePaymentSuccess);

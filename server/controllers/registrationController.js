@@ -5,6 +5,7 @@ import {
   getRegistrationById as fetchRegistrationById,
   getTakenSeats as fetchTakenSeats,
   updatePaymentStatus as updateRegistrationPaymentStatus,
+  deleteRegistration as deleteRegistrationRecord,
 } from '../services/registrationService.js';
 import { createPaychanguCheckout } from '../services/paychanguService.js';
 import { FRONTEND_URL, PRICE_PER_SEAT } from '../config/index.js';
@@ -217,6 +218,22 @@ export async function updateRegistrationStatus(req, res, next) {
     });
 
     res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function deleteRegistration(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    const existing = await fetchRegistrationById(id).catch(() => null);
+    if (!existing) {
+      return res.status(404).json({ message: 'Registration not found' });
+    }
+
+    const deleted = await deleteRegistrationRecord(id);
+    res.json({ success: true, deleted });
   } catch (err) {
     next(err);
   }

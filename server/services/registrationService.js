@@ -73,3 +73,18 @@ export async function getTakenSeats() {
   const seats = (data || []).flatMap((row) => row.selected_seats || []);
   return seats;
 }
+
+export async function deleteRegistration(id) {
+  const { data, error } = await supabase
+    .from('registrations')
+    .delete()
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
