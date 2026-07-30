@@ -9,6 +9,7 @@ function AdminPage() {
   const [token, setToken] = useState(() => localStorage.getItem('adminToken') || '');
   const [tokenInput, setTokenInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     if (!token) {
@@ -74,6 +75,25 @@ function AdminPage() {
     setRegistrations([]);
     setSearch('');
     setError('');
+  };
+
+  const handleDelete = async (id, fullname) => {
+    const confirmed = window.confirm(`Delete the registration for ${fullname}? This can't be undone.`);
+    if (!confirmed) return;
+
+    setDeletingId(id);
+    setError('');
+
+    try {
+      await api.delete(`/api/registration/${id}`, {
+        headers: { 'x-admin-token': token },
+      });
+      setRegistrations((current) => current.filter((item) => item.id !== id));
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Unable to delete registration.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const formatPassengers = (item) =>
@@ -260,6 +280,7 @@ function AdminPage() {
                 <th className="px-5 py-4 font-medium">Passengers</th>
                 <th className="px-5 py-4 font-medium">Amount</th>
                 <th className="px-5 py-4 font-medium">Status</th>
+                <th className="px-5 py-4 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
@@ -291,11 +312,21 @@ function AdminPage() {
                       {registration.payment_status}
                     </span>
                   </td>
+                  <td className="px-5 py-4">
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(registration.id, registration.fullname)}
+                      disabled={deletingId === registration.id}
+                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {deletingId === registration.id ? 'Deleting…' : 'Delete'}
+                    </button>
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="px-5 py-10 text-center text-slate-500">
+                  <td colSpan="9" className="px-5 py-10 text-center text-slate-500">
                     No registrations found.
                   </td>
                 </tr>
