@@ -5,6 +5,7 @@ import {
   getRegistrationById as fetchRegistrationById,
   getTakenSeats as fetchTakenSeats,
   updatePaymentStatus as updateRegistrationPaymentStatus,
+  updateRegistration as updateRegistrationRecord,
   deleteRegistration as deleteRegistrationRecord,
 } from '../services/registrationService.js';
 import { createPaychanguCheckout } from '../services/paychanguService.js';
@@ -27,6 +28,23 @@ const registrationSchema = Joi.object({
     .min(1)
     .required(),
 });
+
+// Looser schema for admin edits — every field optional, since an admin might
+// only be changing the seat numbers and nothing else.
+const editRegistrationSchema = Joi.object({
+  fullname: Joi.string().trim().min(3),
+  phone: Joi.string().trim().pattern(/^\+?\d{7,15}$/),
+  pickup_location: Joi.string().trim().min(2),
+  destination: Joi.string().trim().min(2),
+  selected_seats: Joi.array().items(Joi.string().trim().required()).min(1),
+  seats: Joi.number().integer().min(1),
+  passengers: Joi.array().items(
+    Joi.object({
+      seat: Joi.string().trim().required(),
+      name: Joi.string().trim().min(1).required(),
+    }),
+  ),
+}).min(1);
 
 export async function getAllRegistrations(req, res, next) {
   try {
@@ -217,6 +235,42 @@ export async function updateRegistrationStatus(req, res, next) {
       payment_date: payment_status === 'Paid' ? new Date().toISOString() : null,
     });
 
+    res.json(updated);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Admin edit — lets an admin correct/change details on an existing
+// registration, most commonly the seat numbers, without touching payment
+// status. Recomputes `seats` count and `amount` if selected_seats changes.
+export async function editRegistration(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    const { error, value } = editRegistrationSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      return res.status(400).json({ message: error.details.map((detail) => detail.message).join(', ') });
+    }
+
+    const existing = await fetchRegistrationById(id).catch(() => null);
+    if (!existing) {
+      return res.status(404).json({ message: 'Registration not found' });
+    }
+
+    const updates = { ...value };
+
+    // If seats changed, keep seats count and amount consistent automatically
+    if (value.selected_seats) {
+      const uniqueSeats = [...new Set(value.selected_seats)];
+      if (uniqueSeats.length !== value.selected_seats.length) {
+        return res.status(400).json({ message: 'Selected seats must be unique.' });
+      }
+      updates.seats = value.selected_seats.length;
+      updates.amount = value.selected_seats.length * PRICE_PER_SEAT;
+    }
+
+    const updated = await updateRegistrationRecord(id, updates);
     res.json(updated);
   } catch (err) {
     next(err);

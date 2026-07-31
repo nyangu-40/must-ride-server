@@ -43,6 +43,23 @@ export async function updatePaymentStatus(id, updates) {
   return data;
 }
 
+// Generic update for editing registration details (name, phone, seats, etc.)
+// from the admin dashboard — separate from updatePaymentStatus, which only
+// touches payment fields.
+export async function updateRegistration(id, updates) {
+  const { data, error } = await supabase
+    .from('registrations')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data;
+}
+
 export async function findRegistrationByReference(reference) {
   if (!reference) {
     return null;
@@ -60,11 +77,14 @@ export async function findRegistrationByReference(reference) {
   return data;
 }
 
+// Only PAID registrations hold a seat. A Pending registration (someone
+// started checkout but never completed payment) no longer blocks the seat
+// for others — it stays available until payment actually succeeds.
 export async function getTakenSeats() {
   const { data, error } = await supabase
     .from('registrations')
     .select('selected_seats')
-    .in('payment_status', ['Pending', 'Paid']);
+    .eq('payment_status', 'Paid');
 
   if (error) {
     throw new Error(error.message);

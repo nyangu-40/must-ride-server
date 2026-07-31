@@ -58,6 +58,144 @@ function DeleteConfirmModal({ registration, onCancel, onConfirm, isDeleting }) {
   );
 }
 
+function EditRegistrationModal({ registration, onCancel, onSave, isSaving, error }) {
+  const [form, setForm] = useState(null);
+
+  useEffect(() => {
+    if (registration) {
+      setForm({
+        fullname: registration.fullname || '',
+        phone: registration.phone || '',
+        pickup_location: registration.pickup_location || '',
+        destination: registration.destination || '',
+        selected_seats: (registration.selected_seats || []).join(', '),
+      });
+    } else {
+      setForm(null);
+    }
+  }, [registration]);
+
+  if (!registration || !form) return null;
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    const selected_seats = form.selected_seats
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (selected_seats.length === 0) {
+      onSave(null, 'Please enter at least one seat number.');
+      return;
+    }
+
+    onSave({
+      fullname: form.fullname.trim(),
+      phone: form.phone.trim(),
+      pickup_location: form.pickup_location.trim(),
+      destination: form.destination.trim(),
+      selected_seats,
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+        <h3 className="text-xl font-semibold text-slate-900">Edit registration</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          Update details for this booking — changing the seats updates the seat count and total automatically.
+        </p>
+
+        <div className="mt-5 space-y-4">
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">Full name</span>
+            <input
+              name="fullname"
+              value={form.fullname}
+              onChange={handleChange}
+              required
+              className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">Phone</span>
+            <input
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              required
+              className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
+            />
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">Pickup</span>
+              <input
+                name="pickup_location"
+                value={form.pickup_location}
+                onChange={handleChange}
+                required
+                className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium text-slate-700">Destination</span>
+              <input
+                name="destination"
+                value={form.destination}
+                onChange={handleChange}
+                required
+                className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
+              />
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="text-sm font-medium text-slate-700">Seat numbers</span>
+            <input
+              name="selected_seats"
+              value={form.selected_seats}
+              onChange={handleChange}
+              required
+              placeholder="e.g. 12, 13"
+              className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
+            />
+            <span className="mt-1 block text-xs text-slate-500">Separate multiple seats with commas.</span>
+          </label>
+        </div>
+
+        {error && <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+
+        <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isSaving}
+            className="flex-1 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="flex-1 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSaving ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function AdminPage() {
   const [registrations, setRegistrations] = useState([]);
   const [search, setSearch] = useState('');
@@ -67,6 +205,9 @@ function AdminPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState('');
 
   useEffect(() => {
     if (!token) {
@@ -150,6 +291,30 @@ function AdminPage() {
       setError(err?.response?.data?.message || 'Unable to delete registration.');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const saveEdit = async (updates, validationError) => {
+    if (validationError) {
+      setEditError(validationError);
+      return;
+    }
+
+    setIsSaving(true);
+    setEditError('');
+
+    try {
+      const response = await api.patch(`/api/registration/${editTarget.id}`, updates, {
+        headers: { 'x-admin-token': token },
+      });
+      setRegistrations((current) =>
+        current.map((item) => (item.id === editTarget.id ? { ...item, ...response.data } : item))
+      );
+      setEditTarget(null);
+    } catch (err) {
+      setEditError(err?.response?.data?.message || 'Unable to save changes.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -370,13 +535,25 @@ function AdminPage() {
                     </span>
                   </td>
                   <td className="px-5 py-4">
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(registration)}
-                      className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditError('');
+                          setEditTarget(registration);
+                        }}
+                        className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(registration)}
+                        className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -399,6 +576,14 @@ function AdminPage() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
         isDeleting={isDeleting}
+      />
+
+      <EditRegistrationModal
+        registration={editTarget}
+        onCancel={() => setEditTarget(null)}
+        onSave={saveEdit}
+        isSaving={isSaving}
+        error={editError}
       />
     </section>
   );
