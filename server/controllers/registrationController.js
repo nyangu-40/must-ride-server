@@ -8,7 +8,7 @@ import {
   updateRegistration as updateRegistrationRecord,
   deleteRegistration as deleteRegistrationRecord,
 } from '../services/registrationService.js';
-import { createPaychanguCheckout } from '../services/paychanguService.js';
+import { createPaychanguCheckout, verifyPaychanguPayment } from '../services/paychanguService.js';
 import { FRONTEND_URL, PRICE_PER_SEAT } from '../config/index.js';
 
 const registrationSchema = Joi.object({
@@ -163,18 +163,43 @@ export async function createPayment(req, res, next) {
   }
 }
 
-// Called by the frontend ReceiptPage as a fallback confirmation when the
-// browser lands back on the receipt page with ?status=success. The webhook
-// (webhookController.js) is the primary/reliable path; this exists in case
-// the webhook is delayed and the page loads before it lands.
+// Called by the frontend ReceiptPage when it lands on ?status=success.
+// IMPORTANT: that query param is set by US in return_url and does NOT mean
+// payment actually succeeded — PayChangu sends the browser back here
+// whether the payment succeeded, failed, or was cancelled. So this must
+// verify directly with PayChangu before marking anything Paid, exactly
+// like the webhook does. Never trust the URL alone.
 export async function confirmPayment(req, res, next) {
   try {
     const { id } = req.params;
-    const { payment_reference } = req.body || {};
+
+    const existing = await fetchRegistrationById(id).catch(() => null);
+    if (!existing) {
+      return res.status(404).json({ message: 'Registration not found' });
+    }
+
+    // Already confirmed by the webhook — nothing more to do
+    if (existing.payment_status === 'Paid') {
+      return res.json({ success: true, registration: existing });
+    }
+
+    let verification;
+    try {
+      verification = await verifyPaychanguPayment(id); // tx_ref === registration id
+    } catch (verifyErr) {
+      console.error('confirmPayment: PayChangu verify call failed:', verifyErr?.response?.data || verifyErr.message);
+      return res.json({ success: false, registration: existing });
+    }
+
+    if (!verification.isPaid) {
+      // Genuinely not paid — do not mark it Paid just because the person
+      // landed on this URL
+      return res.json({ success: false, registration: existing });
+    }
 
     const updated = await updateRegistrationPaymentStatus(id, {
       payment_status: 'Paid',
-      payment_reference: payment_reference || null,
+      payment_reference: id,
       payment_date: new Date().toISOString(),
     });
 
@@ -184,38 +209,18 @@ export async function confirmPayment(req, res, next) {
   }
 }
 
-// Kept for backward compatibility in case anything still links here, but
-// callback_url/return_url no longer point at these — the webhook and the
-// frontend receipt page handle the real flow now.
-export async function handlePaymentSuccess(req, res, next) {
-  try {
-    const { id } = req.params;
-    const { payment_reference } = req.query || {};
-
-    await updateRegistrationPaymentStatus(id, {
-      payment_status: 'Paid',
-      payment_reference: payment_reference || null,
-      payment_date: new Date().toISOString(),
-    });
-
-    return res.redirect(`${FRONTEND_URL}/#/receipt/${id}?status=success`);
-  } catch (err) {
-    next(err);
-  }
-}
-
-export async function handlePaymentCancel(req, res, next) {
-  try {
-    return res.redirect(`${FRONTEND_URL}/#/register`);
-  } catch (err) {
-    next(err);
-  }
-}
-
 export async function getTakenSeats(req, res, next) {
   try {
     const seats = await fetchTakenSeats();
     res.json({ seats });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getPrice(req, res, next) {
+  try {
+    res.json({ pricePerSeat: PRICE_PER_SEAT });
   } catch (err) {
     next(err);
   }
