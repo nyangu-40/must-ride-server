@@ -28,14 +28,62 @@ function useRevealOnScroll() {
   return { ref, visible };
 }
 
+// Counts down to the next 6:00 AM (today if it hasn't passed yet, otherwise tomorrow).
+function useCountdownTo6AM() {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  useEffect(() => {
+    function update() {
+      const now = new Date();
+      const target = new Date(now);
+      target.setHours(6, 0, 0, 0);
+      if (target <= now) {
+        target.setDate(target.getDate() + 1);
+      }
+      const diff = target - now;
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+    }
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return timeLeft;
+}
+
 function LandingPage() {
   const headline = useRevealOnScroll();
   const priceCard = useRevealOnScroll();
   const servicesRow = useRevealOnScroll();
+  const countdown = useCountdownTo6AM();
+
+  const promoText = `🎉 Promotion starts tomorrow at 6:00 AM — seats just MWK 5,000! Starts in ${countdown} 🎉`;
 
   return (
     <section className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-soft shadow-slate-200">
-      <div className="flex flex-col overflow-hidden rounded-[2rem]">
+      {/* Scrolling promo banner */}
+      <div className="overflow-hidden bg-amber-400 py-2">
+        <style>{`
+          @keyframes marquee-scroll {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+          }
+        `}</style>
+        <p
+          className="whitespace-nowrap text-sm font-bold text-emerald-900 sm:text-base"
+          style={{ animation: 'marquee-scroll 18s linear infinite' }}
+        >
+          {promoText}
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+          {promoText}
+        </p>
+      </div>
+
+      <div className="flex flex-col overflow-hidden rounded-b-[2rem]">
         {/* Photo section: fixed height now (not flex-1), so it doesn't stretch
             to fill extra space. The headline sits directly on the photo. */}
         <div className="relative h-64 overflow-hidden sm:h-72 lg:h-80">
