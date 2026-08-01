@@ -11,9 +11,8 @@ router.patch('/registration/:id', adminAuth, registrationController.editRegistra
 router.delete('/registration/:id', adminAuth, registrationController.deleteRegistration);
 router.get('/registration/:id/receipt', registrationController.getReceiptById);
 router.post('/registration/:id/confirm-payment', registrationController.confirmPayment);
-router.get('/payment/success/:id', registrationController.handlePaymentSuccess);
-router.get('/payment/cancel/:id', registrationController.handlePaymentCancel);
 router.get('/seats', registrationController.getTakenSeats);
+router.get('/price', registrationController.getPrice);
 router.post('/register', registrationController.createRegistration);
 router.post('/payment', registrationController.createPayment);
 
