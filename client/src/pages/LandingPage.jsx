@@ -28,9 +28,9 @@ function useRevealOnScroll() {
   return { ref, visible };
 }
 
-// Drifting flowers floating gently across the whole page in the background.
-// pointer-events-none so it never blocks clicks on the real content, and
-// sits behind everything (negative z-index).
+// Drifting flowers falling gently down over the whole page, on top of
+// everything. pointer-events-none so they never block clicks, taps, or
+// scrolling — purely visual, doesn't affect layout or functionality at all.
 function FloatingFlowers() {
   const flowers = useMemo(() => {
     const emojiSet = ['🌸', '🌼', '🌺', '🌷'];
@@ -46,13 +46,13 @@ function FloatingFlowers() {
   }, []);
 
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden">
       <style>{`
-        @keyframes float-up {
-          0% { transform: translateY(110vh) translateX(0) rotate(0deg); opacity: 0; }
-          10% { opacity: 0.7; }
-          90% { opacity: 0.7; }
-          100% { transform: translateY(-10vh) translateX(var(--drift)) rotate(360deg); opacity: 0; }
+        @keyframes float-down {
+          0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; }
+          10% { opacity: 0.8; }
+          90% { opacity: 0.8; }
+          100% { transform: translateY(110vh) translateX(var(--drift)) rotate(360deg); opacity: 0; }
         }
       `}</style>
       {flowers.map((f) => (
@@ -62,7 +62,7 @@ function FloatingFlowers() {
             position: 'absolute',
             left: `${f.left}%`,
             fontSize: `${f.size}px`,
-            animation: `float-up ${f.duration}s linear ${f.delay}s infinite`,
+            animation: `float-down ${f.duration}s linear ${f.delay}s infinite`,
             '--drift': `${f.drift}px`,
           }}
         >
