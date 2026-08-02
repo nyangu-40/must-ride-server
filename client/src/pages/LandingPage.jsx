@@ -128,7 +128,10 @@ function LandingPage() {
               }`}
             >
               <p className="text-sm text-slate-500">Seat price</p>
-              <p className="mt-1 text-2xl font-semibold text-emerald-700">MWK 5,000</p>
+              <div className="mt-1 flex items-center justify-center gap-2">
+                <span className="text-base text-slate-400 line-through">MWK 10,000</span>
+                <span className="text-2xl font-semibold text-emerald-700">MWK 5,000</span>
+              </div>
             </div>
 
             <div
