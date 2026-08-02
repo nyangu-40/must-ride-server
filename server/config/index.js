@@ -13,5 +13,5 @@ export const PAYCHANGU_WEBHOOK_SECRET = process.env.PAYCHANGU_WEBHOOK_SECRET;
 export const PORT = process.env.PORT || 5000;
 export const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 export const SERVER_URL = process.env.SERVER_URL || process.env.BACKEND_URL || 'http://localhost:5000';
-export const PRICE_PER_SEAT = Number(process.env.PRICE_PER_SEAT) || 5000;
+export const PRICE_PER_SEAT = Number(process.env.PRICE_PER_SEAT) || 10000;
 export const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
