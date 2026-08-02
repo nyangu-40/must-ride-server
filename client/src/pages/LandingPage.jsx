@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 // Small helper: fades + slides an element up into place the first time it
 // scrolls into view, instead of animating on every scroll pass.
@@ -55,6 +55,51 @@ function useCountdownTo6AM() {
   return timeLeft;
 }
 
+// Drifting flowers floating gently across the whole page in the background.
+// pointer-events-none so it never blocks clicks on the real content, and
+// sits behind everything (negative z-index).
+function FloatingFlowers() {
+  const flowers = useMemo(() => {
+    const emojiSet = ['🌸', '🌼', '🌺', '🌷'];
+    return Array.from({ length: 14 }, (_, i) => ({
+      id: i,
+      emoji: emojiSet[i % emojiSet.length],
+      left: Math.random() * 100,
+      size: 16 + Math.random() * 20,
+      duration: 12 + Math.random() * 10,
+      delay: Math.random() * 10,
+      drift: Math.random() * 60 - 30,
+    }));
+  }, []);
+
+  return (
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <style>{`
+        @keyframes float-up {
+          0% { transform: translateY(110vh) translateX(0) rotate(0deg); opacity: 0; }
+          10% { opacity: 0.7; }
+          90% { opacity: 0.7; }
+          100% { transform: translateY(-10vh) translateX(var(--drift)) rotate(360deg); opacity: 0; }
+        }
+      `}</style>
+      {flowers.map((f) => (
+        <span
+          key={f.id}
+          style={{
+            position: 'absolute',
+            left: `${f.left}%`,
+            fontSize: `${f.size}px`,
+            animation: `float-up ${f.duration}s linear ${f.delay}s infinite`,
+            '--drift': `${f.drift}px`,
+          }}
+        >
+          {f.emoji}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function LandingPage() {
   const headline = useRevealOnScroll();
   const priceCard = useRevealOnScroll();
@@ -64,9 +109,11 @@ function LandingPage() {
   const promoText = `🎉 Promotion starts tomorrow at 6:00 AM — seats just MWK 5,000! Starts in ${countdown} 🎉`;
 
   return (
-    <section className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-white shadow-soft shadow-slate-200">
-      {/* Scrolling promo banner */}
-      <div className="overflow-hidden bg-amber-400 py-2">
+    <>
+      <FloatingFlowers />
+
+      {/* Promo banner now sits above the card, at the very top */}
+      <div className="mx-auto max-w-6xl overflow-hidden rounded-t-2xl bg-amber-400 py-2">
         <style>{`
           @keyframes marquee-scroll {
             0% { transform: translateX(100%); }
@@ -83,79 +130,81 @@ function LandingPage() {
         </p>
       </div>
 
-      <div className="flex flex-col overflow-hidden rounded-b-[2rem]">
-        {/* Photo section: fixed height now (not flex-1), so it doesn't stretch
-            to fill extra space. The headline sits directly on the photo. */}
-        <div className="relative h-64 overflow-hidden sm:h-72 lg:h-80">
-          <img
-            src="/bus-photo.jpg"
-            alt=""
-            className="h-full w-full scale-x-[-1] object-cover"
-          />
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'linear-gradient(to bottom, rgba(5,150,105,0) 40%, rgba(5,150,105,0.8) 100%)',
-            }}
-          />
-          <div
-            ref={headline.ref}
-            className={`absolute inset-x-0 bottom-0 space-y-2 p-5 text-center transition-all duration-700 ease-out sm:p-6 ${
-              headline.visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
-            }`}
-          >
-            <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-100">
-              Yachina luwe
-            </p>
-            <h1 className="text-3xl font-semibold text-white sm:text-4xl">
-              Mpoto Ride
-            </h1>
-            <p className="mx-auto max-w-md text-base text-emerald-50 sm:text-lg">
-              Travel with Mpoto Ride for comfortable student transport and fast online booking.
-            </p>
-          </div>
-        </div>
-
-        {/* Cards section: sized to its content only (no flex-1, no forced
-            min-height), with tighter padding and gaps, so it sits snug right
-            beneath the photo instead of spreading down the page. */}
-        <div className="flex flex-col items-center gap-3 bg-emerald-600/80 px-6 py-4 text-center sm:px-8 sm:py-5">
-          <div
-            ref={priceCard.ref}
-            className={`w-full max-w-xs rounded-3xl bg-white/90 p-4 shadow-sm transition-all duration-700 ease-out delay-150 ${
-              priceCard.visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
-            }`}
-          >
-            <p className="text-sm text-slate-500">Seat price</p>
-            <p className="mt-1 text-2xl font-semibold text-emerald-700">MWK 5,000</p>
+      <section className="mx-auto max-w-6xl overflow-hidden rounded-b-[2rem] bg-white shadow-soft shadow-slate-200">
+        <div className="flex flex-col overflow-hidden">
+          {/* Photo section: fixed height now (not flex-1), so it doesn't stretch
+              to fill extra space. The headline sits directly on the photo. */}
+          <div className="relative h-64 overflow-hidden sm:h-72 lg:h-80">
+            <img
+              src="/bus-photo.jpg"
+              alt=""
+              className="h-full w-full scale-x-[-1] object-cover"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  'linear-gradient(to bottom, rgba(5,150,105,0) 40%, rgba(5,150,105,0.8) 100%)',
+              }}
+            />
+            <div
+              ref={headline.ref}
+              className={`absolute inset-x-0 bottom-0 space-y-2 p-5 text-center transition-all duration-700 ease-out sm:p-6 ${
+                headline.visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+              }`}
+            >
+              <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-100">
+                Yachina luwe
+              </p>
+              <h1 className="text-3xl font-semibold text-white sm:text-4xl">
+                Mpoto Ride
+              </h1>
+              <p className="mx-auto max-w-md text-base text-emerald-50 sm:text-lg">
+                Travel with Mpoto Ride for comfortable student transport and fast online booking.
+              </p>
+            </div>
           </div>
 
-          <div
-            ref={servicesRow.ref}
-            className={`flex w-full flex-col items-center gap-3 transition-all duration-700 ease-out delay-300 sm:flex-row sm:justify-center ${
-              servicesRow.visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
-            }`}
-          >
-            <div className="rounded-3xl bg-white/90 p-4 shadow-sm">
-              <p className="text-sm text-slate-500">On board</p>
-              <ul className="mt-1 space-y-0.5">
-                <li className="text-base font-semibold text-slate-900">Comfortable seat</li>
-                <li className="text-base font-semibold text-slate-900">Charging ports</li>
-                <li className="text-base font-semibold text-slate-900">Snacks</li>
-              </ul>
+          {/* Cards section: sized to its content only (no flex-1, no forced
+              min-height), with tighter padding and gaps, so it sits snug right
+              beneath the photo instead of spreading down the page. */}
+          <div className="flex flex-col items-center gap-3 bg-emerald-600/80 px-6 py-4 text-center sm:px-8 sm:py-5">
+            <div
+              ref={priceCard.ref}
+              className={`w-full max-w-xs rounded-3xl bg-white/90 p-4 shadow-sm transition-all duration-700 ease-out delay-150 ${
+                priceCard.visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+              }`}
+            >
+              <p className="text-sm text-slate-500">Seat price</p>
+              <p className="mt-1 text-2xl font-semibold text-emerald-700">MWK 5,000</p>
             </div>
 
-            <Link
-              to="/register"
-              className="inline-flex w-full items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-emerald-700 shadow-lg transition hover:bg-emerald-50 sm:w-auto"
+            <div
+              ref={servicesRow.ref}
+              className={`flex w-full flex-col items-center gap-3 transition-all duration-700 ease-out delay-300 sm:flex-row sm:justify-center ${
+                servicesRow.visible ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'
+              }`}
             >
-              Register Now
-            </Link>
+              <div className="rounded-3xl bg-white/90 p-4 shadow-sm">
+                <p className="text-sm text-slate-500">On board</p>
+                <ul className="mt-1 space-y-0.5">
+                  <li className="text-base font-semibold text-slate-900">Comfortable seat</li>
+                  <li className="text-base font-semibold text-slate-900">Charging ports</li>
+                  <li className="text-base font-semibold text-slate-900">Snacks</li>
+                </ul>
+              </div>
+
+              <Link
+                to="/register"
+                className="inline-flex w-full items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-emerald-700 shadow-lg transition hover:bg-emerald-50 sm:w-auto"
+              >
+                Register Now
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
 
