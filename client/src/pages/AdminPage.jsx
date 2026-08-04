@@ -398,6 +398,122 @@ function AdminPage() {
     document.body.removeChild(link);
   };
 
+  // Strips everything but digits, so a stored phone number like
+  // "+265 999 123 456" or "0999123456" becomes a clean wa.me-compatible
+  // number. Adjust the country code below if yours differs.
+  const toWhatsAppNumber = (phone) => {
+    let digits = String(phone || '').replace(/\D/g, '');
+    if (digits.startsWith('0')) {
+      digits = '265' + digits.slice(1);
+    }
+    return digits;
+  };
+
+  const generateReceiptDoc = (item) => {
+    const receiptNumber = item.payment_reference || item.id;
+    const statusColor = item.payment_status === 'Paid' ? '#059669' : '#d97706';
+
+    const passengerRows = (item.passengers?.length > 0
+      ? item.passengers
+      : [{ seat: item.selected_seats?.[0] || '-', name: item.fullname }]
+    )
+      .map(
+        (p) =>
+          `<tr><td style="padding:8px;border:1px solid #e2e8f0;">${escapeHtml(p.seat)}</td><td style="padding:8px;border:1px solid #e2e8f0;">${escapeHtml(p.name)}</td></tr>`
+      )
+      .join('');
+
+    const html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+        <head><meta charset="utf-8"><title>Receipt ${escapeHtml(receiptNumber)}</title></head>
+        <body style="font-family:Arial,sans-serif;color:#1e293b;">
+          <div style="background:#047857;padding:20px;border-radius:8px 8px 0 0;">
+            <h1 style="color:#ffffff;margin:0;font-size:22px;">Mpoto Ride</h1>
+            <p style="color:#d1fae5;margin:4px 0 0;">Official Booking Receipt</p>
+          </div>
+
+          <div style="border:1px solid #e2e8f0;border-top:none;padding:20px;border-radius:0 0 8px 8px;">
+            <table style="width:100%;margin-bottom:16px;">
+              <tr>
+                <td style="font-size:13px;color:#64748b;">Receipt No.</td>
+                <td style="font-size:13px;color:#64748b;text-align:right;">Status</td>
+              </tr>
+              <tr>
+                <td style="font-size:15px;font-weight:bold;">${escapeHtml(receiptNumber)}</td>
+                <td style="text-align:right;">
+                  <span style="background:${statusColor};color:#ffffff;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:bold;">
+                    ${escapeHtml(item.payment_status)}
+                  </span>
+                </td>
+              </tr>
+            </table>
+
+            <table style="width:100%;margin-bottom:16px;">
+              <tr>
+                <td style="padding:6px 0;color:#64748b;">Name</td>
+                <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.fullname)}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#64748b;">Phone</td>
+                <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.phone)}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#64748b;">Route</td>
+                <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.pickup_location)} → ${escapeHtml(item.destination)}</td>
+              </tr>
+            </table>
+
+            <p style="font-size:13px;color:#64748b;margin-bottom:6px;">Passengers</p>
+            <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+              <thead>
+                <tr>
+                  <th style="padding:8px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;">Seat</th>
+                  <th style="padding:8px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;">Name</th>
+                </tr>
+              </thead>
+              <tbody>${passengerRows}</tbody>
+            </table>
+
+            <div style="background:#f0fdf4;padding:14px;border-radius:8px;text-align:right;">
+              <p style="margin:0;color:#64748b;font-size:13px;">Total Paid</p>
+              <p style="margin:2px 0 0;color:#047857;font-size:24px;font-weight:bold;">${formatCurrency(item.amount)}</p>
+            </div>
+
+            <div style="margin-top:24px;">
+              <img src="${window.location.origin}/signature.png" alt="" style="height:50px;" />
+              <p style="border-top:1px solid #94a3b8;display:inline-block;padding-top:4px;margin-top:2px;font-size:12px;color:#64748b;">Authorized signature</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `receipt-${item.fullname.replace(/\s+/g, '-')}-${receiptNumber.slice(0, 8)}.doc`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const sendReceipt = (item) => {
+    generateReceiptDoc(item);
+
+    const whatsappNumber = toWhatsAppNumber(item.phone);
+    const message = encodeURIComponent(
+      `Hello ${item.fullname}, this is your Mpoto Ride receipt.\n\n` +
+        `Receipt No: ${item.payment_reference || item.id}\n` +
+        `Seats: ${item.selected_seats?.join(', ') || '-'}\n` +
+        `Amount: ${formatCurrency(item.amount)}\n` +
+        `Status: ${item.payment_status}\n\n` +
+        `The receipt file just downloaded — please attach it to this chat and send. Thank you for riding with us!`
+    );
+
+    window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
+  };
+
   return (
     <section className="mx-auto max-w-6xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
       {!token ? (
@@ -535,7 +651,14 @@ function AdminPage() {
                     </span>
                   </td>
                   <td className="px-5 py-4">
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => sendReceipt(registration)}
+                        className="rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                      >
+                        Send Receipt
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
