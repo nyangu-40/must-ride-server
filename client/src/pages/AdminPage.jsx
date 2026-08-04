@@ -425,63 +425,77 @@ function AdminPage() {
 
     const html = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-        <head><meta charset="utf-8"><title>Receipt ${escapeHtml(receiptNumber)}</title></head>
+        <head>
+          <meta charset="utf-8">
+          <title>Receipt ${escapeHtml(receiptNumber)}</title>
+          <style>
+            @page Section1 {
+              size: 11in 8.5in;
+              mso-page-orientation: landscape;
+            }
+            div.Section1 { page: Section1; }
+          </style>
+        </head>
         <body style="font-family:Arial,sans-serif;color:#1e293b;">
-          <div style="background:#047857;padding:20px;border-radius:8px 8px 0 0;">
-            <h1 style="color:#ffffff;margin:0;font-size:22px;">Mpoto Ride</h1>
-            <p style="color:#d1fae5;margin:4px 0 0;">Official Booking Receipt</p>
-          </div>
+          <div class="Section1" style="width:100%;text-align:center;">
+            <div style="display:inline-block;width:520px;text-align:left;">
+              <div style="background:#047857;padding:20px;border-radius:8px 8px 0 0;">
+                <h1 style="color:#ffffff;margin:0;font-size:22px;">Mpoto Ride</h1>
+                <p style="color:#d1fae5;margin:4px 0 0;">Official Booking Receipt</p>
+              </div>
 
-          <div style="border:1px solid #e2e8f0;border-top:none;padding:20px;border-radius:0 0 8px 8px;">
-            <table style="width:100%;margin-bottom:16px;">
-              <tr>
-                <td style="font-size:13px;color:#64748b;">Receipt No.</td>
-                <td style="font-size:13px;color:#64748b;text-align:right;">Status</td>
-              </tr>
-              <tr>
-                <td style="font-size:15px;font-weight:bold;">${escapeHtml(receiptNumber)}</td>
-                <td style="text-align:right;">
-                  <span style="background:${statusColor};color:#ffffff;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:bold;">
-                    ${escapeHtml(item.payment_status)}
-                  </span>
-                </td>
-              </tr>
-            </table>
+              <div style="border:1px solid #e2e8f0;border-top:none;padding:20px;border-radius:0 0 8px 8px;">
+                <table style="width:100%;margin-bottom:16px;">
+                  <tr>
+                    <td style="font-size:13px;color:#64748b;">Receipt No.</td>
+                    <td style="font-size:13px;color:#64748b;text-align:right;">Status</td>
+                  </tr>
+                  <tr>
+                    <td style="font-size:15px;font-weight:bold;">${escapeHtml(receiptNumber)}</td>
+                    <td style="text-align:right;">
+                      <span style="background:${statusColor};color:#ffffff;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:bold;">
+                        ${escapeHtml(item.payment_status)}
+                      </span>
+                    </td>
+                  </tr>
+                </table>
 
-            <table style="width:100%;margin-bottom:16px;">
-              <tr>
-                <td style="padding:6px 0;color:#64748b;">Name</td>
-                <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.fullname)}</td>
-              </tr>
-              <tr>
-                <td style="padding:6px 0;color:#64748b;">Phone</td>
-                <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.phone)}</td>
-              </tr>
-              <tr>
-                <td style="padding:6px 0;color:#64748b;">Route</td>
-                <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.pickup_location)} → ${escapeHtml(item.destination)}</td>
-              </tr>
-            </table>
+                <table style="width:100%;margin-bottom:16px;">
+                  <tr>
+                    <td style="padding:6px 0;color:#64748b;">Name</td>
+                    <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.fullname)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#64748b;">Phone</td>
+                    <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.phone)}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding:6px 0;color:#64748b;">Route</td>
+                    <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.pickup_location)} → ${escapeHtml(item.destination)}</td>
+                  </tr>
+                </table>
 
-            <p style="font-size:13px;color:#64748b;margin-bottom:6px;">Passengers</p>
-            <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-              <thead>
-                <tr>
-                  <th style="padding:8px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;">Seat</th>
-                  <th style="padding:8px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;">Name</th>
-                </tr>
-              </thead>
-              <tbody>${passengerRows}</tbody>
-            </table>
+                <p style="font-size:13px;color:#64748b;margin-bottom:6px;">Passengers</p>
+                <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+                  <thead>
+                    <tr>
+                      <th style="padding:8px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;">Seat</th>
+                      <th style="padding:8px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;">Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>${passengerRows}</tbody>
+                </table>
 
-            <div style="background:#f0fdf4;padding:14px;border-radius:8px;text-align:right;">
-              <p style="margin:0;color:#64748b;font-size:13px;">Total Paid</p>
-              <p style="margin:2px 0 0;color:#047857;font-size:24px;font-weight:bold;">${formatCurrency(item.amount)}</p>
-            </div>
+                <div style="background:#f0fdf4;padding:14px;border-radius:8px;text-align:right;">
+                  <p style="margin:0;color:#64748b;font-size:13px;">Total Paid</p>
+                  <p style="margin:2px 0 0;color:#047857;font-size:24px;font-weight:bold;">${formatCurrency(item.amount)}</p>
+                </div>
 
-            <div style="margin-top:24px;">
-              <img src="${window.location.origin}/signature.png" alt="" style="height:50px;" />
-              <p style="border-top:1px solid #94a3b8;display:inline-block;padding-top:4px;margin-top:2px;font-size:12px;color:#64748b;">Authorized signature</p>
+                <div style="margin-top:24px;">
+                  <img src="${window.location.origin}/signature.png" alt="" style="height:50px;" />
+                  <p style="border-top:1px solid #94a3b8;display:inline-block;padding-top:4px;margin-top:2px;font-size:12px;color:#64748b;">Authorized signature</p>
+                </div>
+              </div>
             </div>
           </div>
         </body>
