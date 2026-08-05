@@ -436,67 +436,73 @@ function AdminPage() {
             div.Section1 { page: Section1; }
           </style>
         </head>
-        <body style="font-family:Arial,sans-serif;color:#1e293b;">
-          <div class="Section1" style="width:100%;text-align:center;">
-            <div style="display:inline-block;width:520px;text-align:left;">
-              <div style="background:#047857;padding:20px;border-radius:8px 8px 0 0;">
-                <h1 style="color:#ffffff;margin:0;font-size:22px;">Mpoto Ride</h1>
-                <p style="color:#d1fae5;margin:4px 0 0;">Official Booking Receipt</p>
-              </div>
+        <body style="font-family:Arial,sans-serif;color:#1e293b;margin:0;">
+          <div class="Section1">
+            <table width="100%" height="100%" style="border-collapse:collapse;">
+              <tr>
+                <td align="center" valign="middle">
+                  <div style="width:520px;text-align:left;">
+                    <div style="background:#047857;padding:26px 30px;border-radius:12px 12px 0 0;">
+                      <h1 style="color:#ffffff;margin:0;font-size:30px;">Mpoto Ride</h1>
+                      <p style="color:#d1fae5;margin:6px 0 0;font-size:15px;">Official Booking Receipt</p>
+                    </div>
 
-              <div style="border:1px solid #e2e8f0;border-top:none;padding:20px;border-radius:0 0 8px 8px;">
-                <table style="width:100%;margin-bottom:16px;">
-                  <tr>
-                    <td style="font-size:13px;color:#64748b;">Receipt No.</td>
-                    <td style="font-size:13px;color:#64748b;text-align:right;">Status</td>
-                  </tr>
-                  <tr>
-                    <td style="font-size:15px;font-weight:bold;">${escapeHtml(receiptNumber)}</td>
-                    <td style="text-align:right;">
-                      <span style="background:${statusColor};color:#ffffff;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:bold;">
-                        ${escapeHtml(item.payment_status)}
-                      </span>
-                    </td>
-                  </tr>
-                </table>
+                    <div style="border:1px solid #e2e8f0;border-top:none;padding:28px;border-radius:0 0 12px 12px;">
+                      <table style="width:100%;margin-bottom:20px;">
+                        <tr>
+                          <td style="font-size:14px;color:#64748b;">Receipt No.</td>
+                          <td style="font-size:14px;color:#64748b;text-align:right;">Status</td>
+                        </tr>
+                        <tr>
+                          <td style="font-size:18px;font-weight:bold;">${escapeHtml(receiptNumber)}</td>
+                          <td style="text-align:right;">
+                            <span style="background:${statusColor};color:#ffffff;padding:6px 14px;border-radius:14px;font-size:13px;font-weight:bold;">
+                              ${escapeHtml(item.payment_status)}
+                            </span>
+                          </td>
+                        </tr>
+                      </table>
 
-                <table style="width:100%;margin-bottom:16px;">
-                  <tr>
-                    <td style="padding:6px 0;color:#64748b;">Name</td>
-                    <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.fullname)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:6px 0;color:#64748b;">Phone</td>
-                    <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.phone)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding:6px 0;color:#64748b;">Route</td>
-                    <td style="padding:6px 0;font-weight:bold;text-align:right;">${escapeHtml(item.pickup_location)} → ${escapeHtml(item.destination)}</td>
-                  </tr>
-                </table>
+                      <table style="width:100%;margin-bottom:20px;">
+                        <tr>
+                          <td style="padding:8px 0;color:#64748b;font-size:14px;">Name</td>
+                          <td style="padding:8px 0;font-weight:bold;text-align:right;font-size:16px;">${escapeHtml(item.fullname)}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:8px 0;color:#64748b;font-size:14px;">Phone</td>
+                          <td style="padding:8px 0;font-weight:bold;text-align:right;font-size:16px;">${escapeHtml(item.phone)}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:8px 0;color:#64748b;font-size:14px;">Route</td>
+                          <td style="padding:8px 0;font-weight:bold;text-align:right;font-size:16px;">${escapeHtml(item.pickup_location)} → ${escapeHtml(item.destination)}</td>
+                        </tr>
+                      </table>
 
-                <p style="font-size:13px;color:#64748b;margin-bottom:6px;">Passengers</p>
-                <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
-                  <thead>
-                    <tr>
-                      <th style="padding:8px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;">Seat</th>
-                      <th style="padding:8px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;">Name</th>
-                    </tr>
-                  </thead>
-                  <tbody>${passengerRows}</tbody>
-                </table>
+                      <p style="font-size:14px;color:#64748b;margin-bottom:8px;">Passengers</p>
+                      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+                        <thead>
+                          <tr>
+                            <th style="padding:10px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;font-size:14px;">Seat</th>
+                            <th style="padding:10px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;font-size:14px;">Name</th>
+                          </tr>
+                        </thead>
+                        <tbody>${passengerRows}</tbody>
+                      </table>
 
-                <div style="background:#f0fdf4;padding:14px;border-radius:8px;text-align:right;">
-                  <p style="margin:0;color:#64748b;font-size:13px;">Total Paid</p>
-                  <p style="margin:2px 0 0;color:#047857;font-size:24px;font-weight:bold;">${formatCurrency(item.amount)}</p>
-                </div>
+                      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:18px;border-radius:10px;text-align:right;">
+                        <p style="margin:0;color:#64748b;font-size:14px;">Total Paid</p>
+                        <p style="margin:4px 0 0;color:#047857;font-size:30px;font-weight:bold;">${formatCurrency(item.amount)}</p>
+                      </div>
 
-                <div style="margin-top:24px;">
-                  <img src="${window.location.origin}/signature.png" alt="" style="height:50px;" />
-                  <p style="border-top:1px solid #94a3b8;display:inline-block;padding-top:4px;margin-top:2px;font-size:12px;color:#64748b;">Authorized signature</p>
-                </div>
-              </div>
-            </div>
+                      <div style="margin-top:28px;">
+                        <img src="${window.location.origin}/signature.png" alt="" style="height:55px;" />
+                        <p style="border-top:1px solid #94a3b8;display:inline-block;padding-top:5px;margin-top:3px;font-size:13px;color:#64748b;">Authorized signature</p>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </table>
           </div>
         </body>
       </html>
@@ -517,12 +523,7 @@ function AdminPage() {
 
     const whatsappNumber = toWhatsAppNumber(item.phone);
     const message = encodeURIComponent(
-      `Hello ${item.fullname}, this is your Mpoto Ride receipt.\n\n` +
-        `Receipt No: ${item.payment_reference || item.id}\n` +
-        `Seats: ${item.selected_seats?.join(', ') || '-'}\n` +
-        `Amount: ${formatCurrency(item.amount)}\n` +
-        `Status: ${item.payment_status}\n\n` +
-        `The receipt file just downloaded — please attach it to this chat and send. Thank you for riding with us!`
+      `Hello ${item.fullname}, this is your Mpoto Ride receipt.\n\nThank you for riding with us!`
     );
 
     window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
