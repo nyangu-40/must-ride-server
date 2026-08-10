@@ -252,36 +252,6 @@ function AdminPage() {
     };
   }, [registrations]);
 
-  // Amount totals calculation
-  const amountTotals = useMemo(() => {
-    // System collected: has payment_reference (online payments)
-    const systemCollected = registrations
-      .filter(item => item.payment_reference && item.payment_status === 'Paid')
-      .reduce((sum, item) => sum + (item.amount || 0), 0);
-
-    // Manually collected: paid but no payment_reference
-    const manualCollected = registrations
-      .filter(item => item.payment_status === 'Paid' && !item.payment_reference)
-      .reduce((sum, item) => sum + (item.amount || 0), 0);
-
-    // Total paid amount
-    const totalPaid = registrations
-      .filter(item => item.payment_status === 'Paid')
-      .reduce((sum, item) => sum + (item.amount || 0), 0);
-
-    return {
-      systemCollected,
-      manualCollected,
-      totalPaid,
-    };
-  }, [registrations]);
-
-  const pendingAmount = useMemo(() => {
-    return registrations
-      .filter(item => item.payment_status === 'Pending')
-      .reduce((sum, item) => sum + (item.amount || 0), 0);
-  }, [registrations]);
-
   const handleLogin = (event) => {
     event.preventDefault();
     const trimmedToken = tokenInput.trim();
@@ -625,141 +595,117 @@ function AdminPage() {
             </div>
           </div>
 
-          {/* Count Cards */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="rounded-3xl bg-slate-50 p-6">
-              <p className="text-sm text-slate-500">Total registrations</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-900">{totals.total}</p>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-6">
-              <p className="text-sm text-slate-500">Paid</p>
-              <p className="mt-3 text-3xl font-semibold text-emerald-600">{totals.paid}</p>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-6">
-              <p className="text-sm text-slate-500">Pending</p>
-              <p className="mt-3 text-3xl font-semibold text-amber-600">{totals.pending}</p>
-            </div>
-            <div className="rounded-3xl bg-slate-50 p-6">
-              <p className="text-sm text-slate-500">Total Amount</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-900">{formatCurrency(amountTotals.totalPaid)}</p>
-            </div>
-          </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-3xl bg-slate-50 p-6">
+          <p className="text-sm text-slate-500">Total registrations</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-900">{totals.total}</p>
+        </div>
+        <div className="rounded-3xl bg-slate-50 p-6">
+          <p className="text-sm text-slate-500">Paid</p>
+          <p className="mt-3 text-3xl font-semibold text-emerald-600">{totals.paid}</p>
+        </div>
+        <div className="rounded-3xl bg-slate-50 p-6">
+          <p className="text-sm text-slate-500">Pending</p>
+          <p className="mt-3 text-3xl font-semibold text-amber-600">{totals.pending}</p>
+        </div>
+      </div>
 
-          {/* Amount Breakdown Cards */}
-          <div className="mt-4 grid gap-4 md:grid-cols-3">
-            <div className="rounded-3xl border border-emerald-100 bg-emerald-50 p-6">
-              <p className="text-sm text-emerald-700">💳 System Collected</p>
-              <p className="mt-3 text-3xl font-semibold text-emerald-700">{formatCurrency(amountTotals.systemCollected)}</p>
-              <p className="mt-1 text-xs text-emerald-600">Online payments with reference</p>
-            </div>
-            <div className="rounded-3xl border border-blue-100 bg-blue-50 p-6">
-              <p className="text-sm text-blue-700">📝 Manual Collected</p>
-              <p className="mt-3 text-3xl font-semibold text-blue-700">{formatCurrency(amountTotals.manualCollected)}</p>
-              <p className="mt-1 text-xs text-blue-600">Paid manually without reference</p>
-            </div>
-            <div className="rounded-3xl border border-amber-100 bg-amber-50 p-6">
-              <p className="text-sm text-amber-700">⏳ Pending Amount</p>
-              <p className="mt-3 text-3xl font-semibold text-amber-700">{formatCurrency(pendingAmount)}</p>
-              <p className="mt-1 text-xs text-amber-600">Awaiting payment</p>
-            </div>
-          </div>
+      <div className="mt-8 flex flex-col gap-4">
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search by full name"
+          className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-primary"
+        />
 
-          <div className="mt-8 flex flex-col gap-4">
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by full name"
-              className="w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 outline-none transition focus:border-primary"
-            />
+        {error && <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
-            {error && <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
-
-            <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
-              <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                <thead className="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th className="px-5 py-4 font-medium">Payer</th>
-                    <th className="px-5 py-4 font-medium">Phone</th>
-                    <th className="px-5 py-4 font-medium">Pickup</th>
-                    <th className="px-5 py-4 font-medium">Destination</th>
-                    <th className="px-5 py-4 font-medium">Selected seats</th>
-                    <th className="px-5 py-4 font-medium">Passengers</th>
-                    <th className="px-5 py-4 font-medium">Amount</th>
-                    <th className="px-5 py-4 font-medium">Status</th>
-                    <th className="px-5 py-4 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
-                  {filtered.map((registration) => (
-                    <tr key={registration.id} className="hover:bg-slate-50">
-                      <td className="px-5 py-4 text-slate-800">{registration.fullname}</td>
-                      <td className="px-5 py-4 text-slate-600">{registration.phone}</td>
-                      <td className="px-5 py-4 text-slate-600">{registration.pickup_location}</td>
-                      <td className="px-5 py-4 text-slate-600">{registration.destination}</td>
-                      <td className="px-5 py-4 text-slate-600">
-                        {registration.selected_seats?.join(', ') || '—'}
-                      </td>
-                      <td className="px-5 py-4 text-slate-600">
-                        {registration.passengers?.length > 0 ? (
-                          <ul className="space-y-0.5">
-                            {registration.passengers.map((p) => (
-                              <li key={p.seat}>
-                                <span className="font-medium text-slate-800">Seat {p.seat}:</span> {p.name}
-                              </li>
-                            ))}
-                          </ul>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="px-5 py-4 text-slate-800">{formatCurrency(registration.amount)}</td>
-                      <td className="px-5 py-4">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${registration.payment_status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                          {registration.payment_status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            onClick={() => sendReceipt(registration)}
-                            className="rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-emerald-700"
-                          >
-                            Send Receipt
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditError('');
-                              setEditTarget(registration);
-                            }}
-                            className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTarget(registration)}
-                            className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filtered.length === 0 && (
-                    <tr>
-                      <td colSpan="9" className="px-5 py-10 text-center text-slate-500">
-                        No registrations found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-5 py-4 font-medium">Payer</th>
+                <th className="px-5 py-4 font-medium">Phone</th>
+                <th className="px-5 py-4 font-medium">Pickup</th>
+                <th className="px-5 py-4 font-medium">Destination</th>
+                <th className="px-5 py-4 font-medium">Selected seats</th>
+                <th className="px-5 py-4 font-medium">Passengers</th>
+                <th className="px-5 py-4 font-medium">Amount</th>
+                <th className="px-5 py-4 font-medium">Status</th>
+                <th className="px-5 py-4 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 bg-white">
+              {filtered.map((registration) => (
+                <tr key={registration.id} className="hover:bg-slate-50">
+                  <td className="px-5 py-4 text-slate-800">{registration.fullname}</td>
+                  <td className="px-5 py-4 text-slate-600">{registration.phone}</td>
+                  <td className="px-5 py-4 text-slate-600">{registration.pickup_location}</td>
+                  <td className="px-5 py-4 text-slate-600">{registration.destination}</td>
+                  <td className="px-5 py-4 text-slate-600">
+                    {registration.selected_seats?.join(', ') || '—'}
+                  </td>
+                  <td className="px-5 py-4 text-slate-600">
+                    {registration.passengers?.length > 0 ? (
+                      <ul className="space-y-0.5">
+                        {registration.passengers.map((p) => (
+                          <li key={p.seat}>
+                            <span className="font-medium text-slate-800">Seat {p.seat}:</span> {p.name}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td className="px-5 py-4 text-slate-800">{formatCurrency(registration.amount)}</td>
+                  <td className="px-5 py-4">
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${registration.payment_status === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {registration.payment_status}
+                    </span>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => sendReceipt(registration)}
+                        className="rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-emerald-700"
+                      >
+                        Send Receipt
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditError('');
+                          setEditTarget(registration);
+                        }}
+                        className="rounded-full border border-emerald-200 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteTarget(registration)}
+                        className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan="9" className="px-5 py-10 text-center text-slate-500">
+                    No registrations found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
         </>
       )}
 
