@@ -20,6 +20,7 @@ function RegisterPage() {
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [passengerNames, setPassengerNames] = useState({});
   const [takenSeats, setTakenSeats] = useState([]);
+  const [seatNames, setSeatNames] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showSeatMap, setShowSeatMap] = useState(false);
@@ -55,6 +56,7 @@ function RegisterPage() {
       try {
         const resp = await api.get('/api/seats');
         setTakenSeats(resp.data.seats || []);
+        setSeatNames(resp.data.seatNames || {});
       } catch (err) {
         // ignore load errors; seats will appear available
         console.warn('Unable to load taken seats', err?.message || err);
@@ -64,7 +66,9 @@ function RegisterPage() {
     loadTaken();
   }, []);
 
-  function SeatMapModal({ open, onClose, selectedSeats, onToggle, takenSeats }) {
+  function SeatMapModal({ open, onClose, selectedSeats, onToggle, takenSeats, seatNames }) {
+    const [infoSeat, setInfoSeat] = useState(null);
+
     if (!open) return null;
 
     // layout: 2 seats on left, aisle, 3 seats on right (matches the desired bus seating)
@@ -87,6 +91,16 @@ function RegisterPage() {
 
     const payerSeat = selectedSeats[0];
 
+    const handleSeatClick = (seat) => {
+      const isTaken = takenSeats.includes(seat);
+      if (isTaken) {
+        setInfoSeat(seat);
+        return;
+      }
+      setInfoSeat(null);
+      onToggle(seat);
+    };
+
     const seatButton = (seat, rowIndex) => {
       if (!seat) return <div key={`empty-${rowIndex}-${Math.random()}`} />;
 
@@ -97,15 +111,19 @@ function RegisterPage() {
       const baseClass = 'rounded-md border w-9 h-8 text-xs font-semibold transition';
 
       const className = isTaken
-        ? `${baseClass} border-red-500 bg-red-100 text-red-700 cursor-not-allowed`
+        ? `${baseClass} border-red-500 bg-red-100 text-red-700 cursor-pointer`
         : isPayer
         ? `${baseClass} border-yellow-400 bg-yellow-100 text-yellow-800`
         : selected
         ? `${baseClass} border-amber-400 bg-amber-100 text-amber-700`
         : `${baseClass} border-green-400 bg-green-100 text-green-800 hover:bg-green-200`;
 
+      // Note: taken seats are NOT given the native `disabled` attribute
+      // anymore — disabled buttons don't fire onClick in the browser, and
+      // we need the click to still register so we can show who's in it.
+      // Selection is still prevented in handleSeatClick/onToggle above.
       return (
-        <button key={seat} type="button" onClick={() => onToggle(seat)} className={className} disabled={isTaken}>
+        <button key={seat} type="button" onClick={() => handleSeatClick(seat)} className={className}>
           {seat}
         </button>
       );
@@ -121,11 +139,17 @@ function RegisterPage() {
               <h3 className="text-lg font-semibold text-slate-900">Select seats</h3>
               <button type="button" onClick={onClose} className="text-sm text-emerald-700">Close</button>
             </div>
-            <p className="text-sm text-slate-500 mt-2">Tap a seat to select it. First selected seat becomes the payer.</p>
+            <p className="text-sm text-slate-500 mt-2">Tap a seat to select it. Tap a taken (red) seat to see who's registered there.</p>
           </div>
 
           {/* body: only the seat grid scrolls, so header/footer stay visible on short phone screens */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
+            {infoSeat && (
+              <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                Seat {infoSeat} is registered to <span className="font-semibold">{seatNames[infoSeat] || 'a passenger'}</span>.
+              </div>
+            )}
+
             <div className="rounded-2xl border border-slate-200 p-4">
               {/* front of the bus: steering wheel + front seat */}
               <div className="grid grid-cols-[1fr_1fr_0.5rem_1fr_1fr] items-center gap-2 mb-3">
@@ -173,7 +197,7 @@ function RegisterPage() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-red-100 border border-red-500" />
-                <span className="text-sm text-slate-700">Taken</span>
+                <span className="text-sm text-slate-700">Taken (tap to see name)</span>
               </div>
             </div>
 
@@ -339,7 +363,14 @@ function RegisterPage() {
             <p className="text-sm text-slate-600 sm:text-right">Selected seats: {selectedSeats.length > 0 ? selectedSeats.join(', ') : 'None'}</p>
           </div>
 
-          <SeatMapModal open={showSeatMap} onClose={() => setShowSeatMap(false)} selectedSeats={selectedSeats} onToggle={handleSeatToggle} takenSeats={takenSeats} />
+          <SeatMapModal
+            open={showSeatMap}
+            onClose={() => setShowSeatMap(false)}
+            selectedSeats={selectedSeats}
+            onToggle={handleSeatToggle}
+            takenSeats={takenSeats}
+            seatNames={seatNames}
+          />
         </div>
 
         {selectedSeats.length > 1 && (

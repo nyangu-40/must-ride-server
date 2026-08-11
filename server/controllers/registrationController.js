@@ -211,8 +211,8 @@ export async function confirmPayment(req, res, next) {
 
 export async function getTakenSeats(req, res, next) {
   try {
-    const seats = await fetchTakenSeats();
-    res.json({ seats });
+    const { seats, seatNames } = await fetchTakenSeats();
+    res.json({ seats, seatNames });
   } catch (err) {
     next(err);
   }

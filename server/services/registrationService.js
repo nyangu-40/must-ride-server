@@ -80,18 +80,34 @@ export async function findRegistrationByReference(reference) {
 // Only PAID registrations hold a seat. A Pending registration (someone
 // started checkout but never completed payment) no longer blocks the seat
 // for others — it stays available until payment actually succeeds.
+// Only PAID registrations hold a seat. A Pending registration (someone
+// started checkout but never completed payment) no longer blocks the seat
+// for others — it stays available until payment actually succeeds.
+//
+// Now also returns seatNames: a map of seat number -> passenger name, so
+// the frontend can show who's registered in a taken seat.
 export async function getTakenSeats() {
   const { data, error } = await supabase
     .from('registrations')
-    .select('selected_seats')
+    .select('selected_seats, passengers, fullname')
     .eq('payment_status', 'Paid');
 
   if (error) {
     throw new Error(error.message);
   }
 
-  const seats = (data || []).flatMap((row) => row.selected_seats || []);
-  return seats;
+  const seats = [];
+  const seatNames = {};
+
+  (data || []).forEach((row) => {
+    (row.selected_seats || []).forEach((seat) => {
+      seats.push(seat);
+      const passenger = row.passengers?.find((p) => p.seat === seat);
+      seatNames[seat] = passenger?.name || row.fullname;
+    });
+  });
+
+  return { seats, seatNames };
 }
 
 export async function deleteRegistration(id) {
