@@ -243,12 +243,28 @@ function AdminPage() {
   }, [registrations, search]);
 
   const totals = useMemo(() => {
-    const paid = registrations.filter((item) => item.payment_status === 'Paid').length;
+    const paidRegistrations = registrations.filter((item) => item.payment_status === 'Paid');
     const pending = registrations.filter((item) => item.payment_status === 'Pending').length;
+
+    // "Collected via system" = actually paid through PayChangu — these rows
+    // have a payment_reference set by the webhook/verification flow.
+    // "Collected manually" = marked Paid without a payment_reference, i.e.
+    // an admin recorded a payment that happened outside the app (cash, etc.)
+    const systemCollected = paidRegistrations
+      .filter((item) => item.payment_reference)
+      .reduce((sum, item) => sum + (item.amount || 0), 0);
+
+    const manualCollected = paidRegistrations
+      .filter((item) => !item.payment_reference)
+      .reduce((sum, item) => sum + (item.amount || 0), 0);
+
     return {
       total: registrations.length,
-      paid,
+      paid: paidRegistrations.length,
       pending,
+      systemCollected,
+      manualCollected,
+      totalCollected: systemCollected + manualCollected,
     };
   }, [registrations]);
 
@@ -607,6 +623,24 @@ function AdminPage() {
         <div className="rounded-3xl bg-slate-50 p-6">
           <p className="text-sm text-slate-500">Pending</p>
           <p className="mt-3 text-3xl font-semibold text-amber-600">{totals.pending}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-4 md:grid-cols-3">
+        <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-6">
+          <p className="text-sm text-slate-500">Collected via system</p>
+          <p className="mt-1 text-xs text-slate-400">Paid online, has a payment reference</p>
+          <p className="mt-3 text-2xl font-semibold text-emerald-700">{formatCurrency(totals.systemCollected)}</p>
+        </div>
+        <div className="rounded-3xl border border-amber-100 bg-amber-50/60 p-6">
+          <p className="text-sm text-slate-500">Collected manually</p>
+          <p className="mt-1 text-xs text-slate-400">Marked Paid, no payment reference</p>
+          <p className="mt-3 text-2xl font-semibold text-amber-700">{formatCurrency(totals.manualCollected)}</p>
+        </div>
+        <div className="rounded-3xl bg-slate-900 p-6">
+          <p className="text-sm text-slate-300">Total collected</p>
+          <p className="mt-1 text-xs text-slate-400">System + manual combined</p>
+          <p className="mt-3 text-2xl font-semibold text-white">{formatCurrency(totals.totalCollected)}</p>
         </div>
       </div>
 
