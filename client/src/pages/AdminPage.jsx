@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { jsPDF } from 'jspdf';
 import api from '../services/api.js';
 import { formatCurrency } from '../utils/formatters.js';
 
@@ -246,10 +247,6 @@ function AdminPage() {
     const paidRegistrations = registrations.filter((item) => item.payment_status === 'Paid');
     const pending = registrations.filter((item) => item.payment_status === 'Pending').length;
 
-    // "Collected via system" = actually paid through PayChangu — these rows
-    // have a payment_reference set by the webhook/verification flow.
-    // "Collected manually" = marked Paid without a payment_reference, i.e.
-    // an admin recorded a payment that happened outside the app (cash, etc.)
     const systemCollected = paidRegistrations
       .filter((item) => item.payment_reference)
       .reduce((sum, item) => sum + (item.amount || 0), 0);
@@ -425,117 +422,147 @@ function AdminPage() {
     return digits;
   };
 
-  const generateReceiptDoc = (item) => {
+  // Real landscape PDF with actual selectable text — looks identical on
+  // every device/OS, unlike the old .doc-via-HTML trick.
+  const generateReceiptPDF = (item) => {
     const receiptNumber = item.payment_reference || item.id;
-    const statusColor = item.payment_status === 'Paid' ? '#059669' : '#d97706';
+    const statusColor = item.payment_status === 'Paid' ? [5, 150, 105] : [217, 119, 6];
+    const green = [4, 120, 87];
+    const slate = [100, 116, 139];
+    const dark = [30, 41, 59];
 
-    const passengerRows = (item.passengers?.length > 0
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    const cardWidth = 420;
+    const cardX = (pageWidth - cardWidth) / 2;
+    let y = (pageHeight - 380) / 2;
+
+    doc.setFillColor(...green);
+    doc.roundedRect(cardX, y, cardWidth, 70, 10, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.text('Mpoto Ride', cardX + 24, y + 32);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text('Official Booking Receipt', cardX + 24, y + 50);
+
+    y += 70;
+
+    const bodyTop = y;
+    const bodyHeight = 300;
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(cardX, bodyTop, cardWidth, bodyHeight, 10, 10, 'S');
+
+    let cursorY = bodyTop + 30;
+    const leftX = cardX + 24;
+    const rightX = cardX + cardWidth - 24;
+
+    doc.setTextColor(...slate);
+    doc.setFontSize(10);
+    doc.text('Receipt No.', leftX, cursorY);
+    doc.text('Status', rightX, cursorY, { align: 'right' });
+
+    cursorY += 18;
+    doc.setTextColor(...dark);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text(String(receiptNumber), leftX, cursorY);
+
+    const statusText = item.payment_status;
+    const statusWidth = doc.getTextWidth(statusText) + 20;
+    doc.setFillColor(...statusColor);
+    doc.roundedRect(rightX - statusWidth, cursorY - 12, statusWidth, 18, 9, 9, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.text(statusText, rightX - statusWidth / 2, cursorY, { align: 'center' });
+
+    cursorY += 30;
+
+    const infoRow = (label, value) => {
+      doc.setTextColor(...slate);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(label, leftX, cursorY);
+      doc.setTextColor(...dark);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(String(value), rightX, cursorY, { align: 'right' });
+      cursorY += 22;
+    };
+
+    infoRow('Name', item.fullname);
+    infoRow('Phone', item.phone);
+    infoRow('Route', `${item.pickup_location} -> ${item.destination}`);
+
+    cursorY += 8;
+
+    doc.setTextColor(...slate);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Passengers', leftX, cursorY);
+    cursorY += 12;
+
+    const passengers = item.passengers?.length > 0
       ? item.passengers
-      : [{ seat: item.selected_seats?.[0] || '-', name: item.fullname }]
-    )
-      .map(
-        (p) =>
-          `<tr><td style="padding:8px;border:1px solid #e2e8f0;">${escapeHtml(p.seat)}</td><td style="padding:8px;border:1px solid #e2e8f0;">${escapeHtml(p.name)}</td></tr>`
-      )
-      .join('');
+      : [{ seat: item.selected_seats?.[0] || '-', name: item.fullname }];
 
-    const html = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-          <meta charset="utf-8">
-          <title>Receipt ${escapeHtml(receiptNumber)}</title>
-          <style>
-            @page Section1 {
-              size: 11in 8.5in;
-              mso-page-orientation: landscape;
-            }
-            div.Section1 { page: Section1; }
-          </style>
-        </head>
-        <body style="font-family:Arial,sans-serif;color:#1e293b;margin:0;">
-          <div class="Section1">
-            <table width="100%" height="100%" style="border-collapse:collapse;">
-              <tr>
-                <td align="center" valign="middle">
-                  <div style="width:520px;text-align:left;">
-                    <div style="background:#047857;padding:26px 30px;border-radius:12px 12px 0 0;">
-                      <h1 style="color:#ffffff;margin:0;font-size:30px;">Mpoto Ride</h1>
-                      <p style="color:#d1fae5;margin:6px 0 0;font-size:15px;">Official Booking Receipt</p>
-                    </div>
+    const tableWidth = cardWidth - 48;
+    const seatColWidth = 60;
+    const nameColWidth = tableWidth - seatColWidth;
 
-                    <div style="border:1px solid #e2e8f0;border-top:none;padding:28px;border-radius:0 0 12px 12px;">
-                      <table style="width:100%;margin-bottom:20px;">
-                        <tr>
-                          <td style="font-size:14px;color:#64748b;">Receipt No.</td>
-                          <td style="font-size:14px;color:#64748b;text-align:right;">Status</td>
-                        </tr>
-                        <tr>
-                          <td style="font-size:18px;font-weight:bold;">${escapeHtml(receiptNumber)}</td>
-                          <td style="text-align:right;">
-                            <span style="background:${statusColor};color:#ffffff;padding:6px 14px;border-radius:14px;font-size:13px;font-weight:bold;">
-                              ${escapeHtml(item.payment_status)}
-                            </span>
-                          </td>
-                        </tr>
-                      </table>
+    doc.setFillColor(240, 253, 244);
+    doc.rect(leftX, cursorY, seatColWidth, 20, 'F');
+    doc.rect(leftX + seatColWidth, cursorY, nameColWidth, 20, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.rect(leftX, cursorY, seatColWidth, 20, 'S');
+    doc.rect(leftX + seatColWidth, cursorY, nameColWidth, 20, 'S');
+    doc.setTextColor(...dark);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text('Seat', leftX + 8, cursorY + 14);
+    doc.text('Name', leftX + seatColWidth + 8, cursorY + 14);
+    cursorY += 20;
 
-                      <table style="width:100%;margin-bottom:20px;">
-                        <tr>
-                          <td style="padding:8px 0;color:#64748b;font-size:14px;">Name</td>
-                          <td style="padding:8px 0;font-weight:bold;text-align:right;font-size:16px;">${escapeHtml(item.fullname)}</td>
-                        </tr>
-                        <tr>
-                          <td style="padding:8px 0;color:#64748b;font-size:14px;">Phone</td>
-                          <td style="padding:8px 0;font-weight:bold;text-align:right;font-size:16px;">${escapeHtml(item.phone)}</td>
-                        </tr>
-                        <tr>
-                          <td style="padding:8px 0;color:#64748b;font-size:14px;">Route</td>
-                          <td style="padding:8px 0;font-weight:bold;text-align:right;font-size:16px;">${escapeHtml(item.pickup_location)} → ${escapeHtml(item.destination)}</td>
-                        </tr>
-                      </table>
+    doc.setFont('helvetica', 'normal');
+    passengers.forEach((p) => {
+      doc.rect(leftX, cursorY, seatColWidth, 20, 'S');
+      doc.rect(leftX + seatColWidth, cursorY, nameColWidth, 20, 'S');
+      doc.setFontSize(9);
+      doc.text(String(p.seat), leftX + 8, cursorY + 14);
+      doc.text(String(p.name), leftX + seatColWidth + 8, cursorY + 14);
+      cursorY += 20;
+    });
 
-                      <p style="font-size:14px;color:#64748b;margin-bottom:8px;">Passengers</p>
-                      <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
-                        <thead>
-                          <tr>
-                            <th style="padding:10px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;font-size:14px;">Seat</th>
-                            <th style="padding:10px;border:1px solid #e2e8f0;background:#f0fdf4;text-align:left;font-size:14px;">Name</th>
-                          </tr>
-                        </thead>
-                        <tbody>${passengerRows}</tbody>
-                      </table>
+    cursorY += 16;
 
-                      <div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:18px;border-radius:10px;text-align:right;">
-                        <p style="margin:0;color:#64748b;font-size:14px;">Total Paid</p>
-                        <p style="margin:4px 0 0;color:#047857;font-size:30px;font-weight:bold;">${formatCurrency(item.amount)}</p>
-                      </div>
+    doc.setFillColor(240, 253, 244);
+    doc.setDrawColor(187, 247, 208);
+    doc.roundedRect(leftX, cursorY, tableWidth, 50, 8, 8, 'FD');
+    doc.setTextColor(...slate);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Total Paid', rightX, cursorY + 18, { align: 'right' });
+    doc.setTextColor(...green);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text(formatCurrency(item.amount), rightX, cursorY + 38, { align: 'right' });
 
-                      <div style="margin-top:28px;">
-                        <img src="${window.location.origin}/signature.png" alt="" style="height:55px;" />
-                        <p style="border-top:1px solid #94a3b8;display:inline-block;padding-top:5px;margin-top:3px;font-size:13px;color:#64748b;">Authorized signature</p>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </div>
-        </body>
-      </html>
-    `;
+    cursorY += 66;
 
-    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `receipt-${item.fullname.replace(/\s+/g, '-')}-${receiptNumber.slice(0, 8)}.doc`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    doc.setDrawColor(148, 163, 184);
+    doc.line(leftX, cursorY, leftX + 140, cursorY);
+    doc.setTextColor(...slate);
+    doc.setFontSize(9);
+    doc.text('Authorized signature', leftX, cursorY + 12);
+
+    doc.save(`receipt-${item.fullname.replace(/\s+/g, '-')}-${String(receiptNumber).slice(0, 8)}.pdf`);
   };
 
   const sendReceipt = (item) => {
-    generateReceiptDoc(item);
+    generateReceiptPDF(item);
 
     const whatsappNumber = toWhatsAppNumber(item.phone);
     const message = encodeURIComponent(
