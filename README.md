@@ -1,123 +1,100 @@
-# MUST Ride Registration System
+# MUST Ride
 
-A complete registration application for MUST Ride trips with online payment integration using PayChangu and Supabase.
+Multi-tenant bus booking with a React/Vite passenger app, an Express API, Supabase
+storage and authentication, and PayChangu hosted checkout.
 
-## Project Structure
+## Setup
 
-- `client/` - React frontend built with Vite and Tailwind CSS
-- `server/` - Express backend with Supabase database integration
-- `.env.example` - example environment variables
+1. Copy `.env.example` to `.env` at the repository root and fill in the Supabase
+   and PayChangu credentials. Keep service-role and PayChangu secret keys server-only.
+2. Install dependencies:
 
-## Features
-
-- Landing page and registration page
-- Payment checkout generation via PayChangu
-- Secure webhook support for payment verification
-- Admin dashboard with totals, search, and CSV export
-- Supabase-backed registration storage
-
-## Installation
-
-1. Clone the repository.
-2. Install frontend dependencies:
-   ```bash
-   cd client
+   ```powershell
+   cd server
    npm install
-   ```
-3. Install backend dependencies:
-   ```bash
-   cd ../server
+   cd ..\client
    npm install
    ```
 
-## Running the application
+3. Configure the Supabase browser values in the root `.env` as
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. The service-role key must
+   never use a `VITE_` prefix.
+4. Apply `server/database/migrations/002_multitenant.sql` to the Supabase project.
+   The migration backfills existing registrations to the default Mpoto Ride
+   organiser and creates paid-registration ledger rows and occupied seats.
+5. Set `SUPERADMIN_EMAIL` and `SUPERADMIN_PASSWORD`, then run:
 
-### Frontend
+   ```powershell
+   cd server
+   npm run seed:superadmin
+   ```
 
-```bash
-cd client
+   The seed ensures the superadmin profile exists and applies `PRICE_PER_SEAT`
+   (default MWK 10,000) to the default trip.
+6. Configure the PayChangu callback URL as `SERVER_URL/webhook/paychangu`.
+
+The migration intentionally leaves the default historical trip's departure time
+unset because no legacy departure time exists. Set its date in the organiser
+dashboard before publishing it for a scheduled trip. Roll back with
+`server/database/migrations/002_multitenant_rollback.sql` only if you intend to
+remove the multitenant schema and its data.
+
+## Run locally
+
+Start the API from `server/`:
+
+```powershell
 npm run dev
 ```
 
-### Backend
+Start the client from `client/`:
 
-```bash
-cd server
+```powershell
 npm run dev
 ```
 
-## Supabase Setup
+The client listens on port 5173 and the API defaults to port 5000. Set
+`FRONTEND_URL` and `SERVER_URL` to the public frontend and backend origins when
+deploying. CORS allows only `FRONTEND_URL`.
 
-1. Create a Supabase project.
-2. Add the following table using SQL.
+## Environment variables
 
-```sql
-create table registrations (
-  id uuid default uuid_generate_v4() primary key,
-  fullname text not null,
-  phone text not null,
-  pickup_location text not null,
-  destination text not null,
-  seats int not null,
-  amount numeric not null,
-  payment_status text not null default 'Pending',
-  payment_reference text,
-  payment_date timestamp,
-  created_at timestamp not null default now()
-);
-```
+See `.env.example` for the complete placeholder list. Required server values:
 
-3. Set backend environment variables in `.env`:
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- `FRONTEND_URL`, `SERVER_URL`
 
-```env
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-PAYCHANGU_SECRET_KEY=
-PAYCHANGU_PUBLIC_KEY=
-PAYCHANGU_WEBHOOK_SECRET=
-PORT=5000
-FRONTEND_URL=http://localhost:5173
-```
+PayChangu credentials are only required for payment and webhook operations. The
+API can start without them, but checkout and payment verification will return a
+configuration error until `PAYCHANGU_SECRET_KEY` is set. Configure
+`PAYCHANGU_WEBHOOK_SECRET` to accept signed PayChangu webhook notifications.
 
-4. Set frontend environment variables in `client/.env`:
+`SUPERADMIN_EMAIL` and `SUPERADMIN_PASSWORD` are needed only to seed the
+superadmin. `PAYOUTS_ENABLED` defaults to `false`; enable it only after PayChangu
+payouts have been activated for the account. `IMPERSONATION_SECRET` is needed
+for short-lived, read-only platform-admin view-as sessions. Never commit actual
+environment values.
+`MIN_PAYMENT_AMOUNT` sets the minimum per-seat amount for flexible trips and
+defaults to MWK 100.
 
-```env
-VITE_API_BASE_URL=http://localhost:5000
-VITE_SUPABASE_URL=https://iiukqnepiwekeuqiuwgg.supabase.co
-VITE_SUPABASE_ANON_KEY=sb_publishable_6dVGlaLFWQvvLJFLsoM17Q_aW4SMU9A
-```
+New organizer invites start with an expired subscription until a superadmin
+records an extension. The backfilled Mpoto Ride organizer keeps its existing
+`active_until` value and can be extended from the platform dashboard.
 
-> Note: The frontend uses the backend API for registration and payment. The Supabase public values are available for browser-side integrations if you choose to add direct Supabase access later.
+## Main endpoints
 
-## PayChangu Integration
+- Public tenant pages: `GET /api/public/organizers/:slug`
+- Trip seats and payment: `GET /api/public/trips/:tripId/seats`,
+  `POST /api/public/trips/:tripId/payment`
+- Receipts and confirmation: `GET /api/registration/:id/receipt`,
+  `POST /api/registration/:id/confirm-payment`
+- Login: `POST /api/auth/login` (Supabase email/password)
+- Organizer APIs: `/api/organizer/*`
+- Platform-admin APIs: `/api/platform/*`
+- PayChangu notifications: `/webhook/paychangu`
 
-- Use `PAYCHANGU_SECRET_KEY` for server requests
-- Use `PAYCHANGU_WEBHOOK_SECRET` for webhook verification
-- The backend calculates the amount and creates the checkout session
-
-## Deployment
-
-### Frontend
-
-- Deploy `client/` to Vercel or Netlify
-- Ensure `VITE_API_BASE_URL` points to the deployed backend
-
-### Backend
-
-- Deploy `server/` to Render or Railway
-- Set environment variables in your deployment provider
-
-## API Endpoints
-
-- `POST /api/register` - optional registration endpoint
-- `POST /api/payment` - create registration and payment checkout
-- `POST /webhook/paychangu` - PayChangu webhook endpoint
-- `GET /api/registrations` - list registrations
-- `GET /api/registration/:id` - fetch registration by id
-
-## Notes
-
-- The frontend never sends the amount; backend computes it.
-- Webhook requests are verified using the signature header.
-- Ensure webhook route is publicly accessible and configured in PayChangu.
+Prices are computed from the trip row. Verified successful payments update a
+registration and credit its organiser's internal ledger in one database
+transaction. Organiser balances are ledger-derived; pending withdrawals reserve
+available balance through a row-locked database function. Service-role API
+queries explicitly scope organiser data by the authenticated organiser.

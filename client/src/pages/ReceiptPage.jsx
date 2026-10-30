@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { jsPDF } from 'jspdf';
 import api from '../services/api.js';
 import { formatCurrency } from '../utils/formatters.js';
+import { getBrandStyle } from '../utils/branding.js';
+import { Button } from '../components/ui.jsx';
 
 function ReceiptPage() {
   const { id } = useParams();
   const [receipt, setReceipt] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [shareMessage, setShareMessage] = useState('');
 
   useEffect(() => {
     async function loadReceipt() {
@@ -65,16 +69,52 @@ function ReceiptPage() {
   }
 
   const isPaid = receipt.payment_status === 'Paid';
+  function downloadPdf() {
+    const document = new jsPDF();
+    document.setFontSize(20);
+    document.text(receipt.organizer?.name || 'Must Ride', 20, 24);
+    document.setFontSize(16);
+    document.text('Booking receipt', 20, 38);
+    document.setFontSize(11);
+    [
+      `Payment status: ${receipt.payment_status}`,
+      `Passenger: ${receipt.fullname}`,
+      `Phone: ${receipt.phone}`,
+      `Trip: ${receipt.trip_title || `${receipt.origin} to ${receipt.destination}`}`,
+      `Seats: ${receipt.selected_seats?.join(', ') || 'None'}`,
+      `Pickup: ${receipt.pickup_location}`,
+      `Destination: ${receipt.destination}`,
+      `Amount: ${formatCurrency(receipt.amount)}`,
+      `Reference: ${receipt.payment_reference || '—'}`,
+    ].forEach((line, index) => document.text(line, 20, 54 + index * 9, { maxWidth: 170 }));
+    document.text('Powered by Must Ride', 20, 150);
+    document.save(`must-ride-receipt-${id}.pdf`);
+  }
+
+  async function shareReceipt() {
+    setShareMessage('');
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Booking receipt', url: window.location.href });
+        return;
+      }
+      await navigator.clipboard.writeText(window.location.href);
+      setShareMessage('Receipt link copied.');
+    } catch {
+      setShareMessage('Unable to share automatically. Copy the receipt URL from your browser.');
+    }
+  }
 
   return (
-    <section className="mx-auto max-w-2xl overflow-hidden rounded-3xl bg-white shadow-soft shadow-slate-200">
+    <section className="mx-auto max-w-2xl overflow-hidden rounded-3xl bg-white shadow-soft shadow-slate-200" style={getBrandStyle(receipt.organizer?.primary_color)}>
       {/* Landscape ticket layout: a stub on the left with the essentials
           (name, phone, seats), main details on the right. */}
       <div className="flex flex-col sm:flex-row">
         {/* Stub */}
-        <div className="flex shrink-0 flex-col justify-between gap-4 bg-emerald-700 p-5 text-white sm:w-48">
+        <div className="flex shrink-0 flex-col justify-between gap-4 bg-emerald-700 p-5 sm:w-48" style={{ backgroundColor: 'var(--brand)', color: 'var(--brand-contrast)' }}>
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-emerald-100">Mpoto Ride</p>
+            {receipt.organizer?.logo_url && <img src={receipt.organizer.logo_url} alt="" className="mb-2 h-10 w-10 rounded-full bg-white object-contain p-1" />}
+            <p className="text-xs font-medium uppercase tracking-[0.2em]">{receipt.organizer?.name || 'Must Ride'}</p>
             <p
               className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                 isPaid ? 'bg-white text-emerald-700' : 'bg-amber-100 text-amber-700'
@@ -84,8 +124,9 @@ function ReceiptPage() {
             </p>
           </div>
           <div>
-            <p className="text-xs text-emerald-100">Total paid</p>
+            <p className="text-xs opacity-80">Total paid</p>
             <p className="text-2xl font-semibold">{formatCurrency(receipt.amount)}</p>
+            {receipt.chosen_amount_per_seat && <p className="mt-1 text-xs opacity-90">{formatCurrency(receipt.chosen_amount_per_seat)} per seat</p>}
           </div>
         </div>
 
@@ -127,23 +168,27 @@ function ReceiptPage() {
             </div>
           )}
 
-          <div className="mt-5 flex gap-3">
+          <div className="mt-5 flex flex-wrap gap-3 print:hidden">
+            <Button type="button" onClick={downloadPdf} className="flex-1 sm:flex-none">Download PDF</Button>
+            <Button type="button" variant="secondary" onClick={shareReceipt} className="flex-1 sm:flex-none">Share receipt</Button>
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex flex-1 items-center justify-center rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 sm:flex-none"
+              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-full bg-brand px-4 py-2.5 text-sm font-semibold text-white transition sm:flex-none"
             >
               Print
             </button>
             <Link
-              to="/register"
+              to={receipt.organizer?.slug ? `/o/${receipt.organizer.slug}` : '/o/mpoto-ride'}
               className="inline-flex flex-1 items-center justify-center rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 sm:flex-none"
             >
               Book another
             </Link>
           </div>
+          {shareMessage && <p role="status" className="mt-3 text-sm text-slate-700">{shareMessage}</p>}
         </div>
       </div>
+      <p className="pb-4 text-center text-xs text-slate-400">Powered by Must Ride</p>
     </section>
   );
 }

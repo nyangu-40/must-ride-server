@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import api from '../services/api.js';
 import { formatCurrency } from '../utils/formatters.js';
+import { getSupabaseClient } from '../services/supabase.js';
 
 function DeleteConfirmModal({ registration, onCancel, onConfirm, isDeleting }) {
   if (!registration) return null;
@@ -201,8 +202,9 @@ function AdminPage() {
   const [registrations, setRegistrations] = useState([]);
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
-  const [token, setToken] = useState(() => localStorage.getItem('adminToken') || '');
-  const [tokenInput, setTokenInput] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -211,23 +213,43 @@ function AdminPage() {
   const [editError, setEditError] = useState('');
 
   useEffect(() => {
-    if (!token) {
+    let active = true;
+    getSupabaseClient().auth.getSession().then(({ data, error: sessionError }) => {
+      if (!active) return;
+      if (sessionError) setError(sessionError.message);
+      setIsAuthenticated(Boolean(data.session));
+    }).catch((sessionError) => {
+      if (active) setError(sessionError.message);
+    });
+
+    const { data: { subscription } } = getSupabaseClient().auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(Boolean(session));
+      if (event === 'SIGNED_OUT') {
+        setRegistrations([]);
+        setSearch('');
+      }
+    });
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
       return;
     }
 
     async function loadRegistrations() {
       setIsLoading(true);
       try {
-        const response = await api.get('/api/registrations', {
-          headers: { 'x-admin-token': token },
-        });
+        const response = await api.get('/api/registrations');
         setRegistrations(response.data || []);
         setError('');
       } catch (err) {
         if (err?.response?.status === 401) {
-          setError('Unauthorized admin token. Please sign in again.');
-          localStorage.removeItem('adminToken');
-          setToken('');
+          setError('Your session expired. Please sign in again.');
+          await getSupabaseClient().auth.signOut();
         } else {
           setError(err?.response?.data?.message || 'Unable to load registrations.');
         }
@@ -237,7 +259,7 @@ function AdminPage() {
     }
 
     loadRegistrations();
-  }, [token]);
+  }, [isAuthenticated]);
 
   const filtered = useMemo(() => {
     return registrations.filter((item) => item.fullname.toLowerCase().includes(search.toLowerCase()));
@@ -265,27 +287,21 @@ function AdminPage() {
     };
   }, [registrations]);
 
-  const handleLogin = (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
-    const trimmedToken = tokenInput.trim();
-
-    if (!trimmedToken) {
-      setError('Please enter the admin token.');
-      return;
-    }
-
-    localStorage.setItem('adminToken', trimmedToken);
-    setToken(trimmedToken);
     setError('');
+    try {
+      const { data } = await api.post('/api/auth/login', { email: email.trim(), password });
+      const { error: sessionError } = await getSupabaseClient().auth.setSession(data.session);
+      if (sessionError) throw sessionError;
+    } catch (loginError) {
+      setError(loginError?.response?.data?.message || loginError.message || 'Unable to sign in.');
+    }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    setToken('');
-    setTokenInput('');
-    setRegistrations([]);
-    setSearch('');
-    setError('');
+  const handleLogout = async () => {
+    const { error: signOutError } = await getSupabaseClient().auth.signOut();
+    if (signOutError) setError(signOutError.message);
   };
 
   const confirmDelete = async () => {
@@ -296,7 +312,6 @@ function AdminPage() {
 
     try {
       await api.delete(`/api/registration/${deleteTarget.id}`, {
-        headers: { 'x-admin-token': token },
       });
       setRegistrations((current) => current.filter((item) => item.id !== deleteTarget.id));
       setDeleteTarget(null);
@@ -317,9 +332,7 @@ function AdminPage() {
     setEditError('');
 
     try {
-      const response = await api.patch(`/api/registration/${editTarget.id}`, updates, {
-        headers: { 'x-admin-token': token },
-      });
+      const response = await api.patch(`/api/registration/${editTarget.id}`, updates);
       setRegistrations((current) =>
         current.map((item) => (item.id === editTarget.id ? { ...item, ...response.data } : item))
       );
@@ -574,12 +587,12 @@ function AdminPage() {
 
   return (
     <section className="mx-auto max-w-6xl rounded-3xl bg-white p-8 shadow-soft shadow-slate-200">
-      {!token ? (
+      {!isAuthenticated ? (
         <div className="mx-auto max-w-xl rounded-3xl bg-slate-50 p-8 shadow-sm shadow-slate-200">
           <div className="mb-6 text-center">
             <p className="text-sm uppercase tracking-[0.3em] text-secondary">Admin login</p>
             <h2 className="mt-3 text-3xl font-semibold text-slate-900">Secure access</h2>
-            <p className="mt-2 text-slate-600">Enter the admin token to view registrations.</p>
+            <p className="mt-2 text-slate-600">Sign in with your platform administrator account.</p>
           </div>
 
           {error && (
@@ -589,14 +602,12 @@ function AdminPage() {
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
-            <label className="block text-sm font-medium text-slate-700">Admin token</label>
-            <input
-              type="password"
-              value={tokenInput}
-              onChange={(event) => setTokenInput(event.target.value)}
-              placeholder="Enter admin token"
-              className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-primary"
-            />
+            <label className="block text-sm font-medium text-slate-700">Email</label>
+            <input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)}
+              className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-primary" />
+            <label className="block text-sm font-medium text-slate-700">Password</label>
+            <input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)}
+              className="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-primary" />
             <button
               type="submit"
               className="inline-flex w-full items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-900"

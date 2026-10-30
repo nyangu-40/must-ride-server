@@ -1,31 +1,43 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { BusFront } from 'lucide-react';
 import api from '../services/api.js';
 import { formatCurrency } from '../utils/formatters.js';
-
-const PRICE_PER_SEAT = 10000;
-const SEAT_COUNT = 66;
-const seatLabels = Array.from({ length: SEAT_COUNT }, (_, index) => (index + 1).toString());
-
-// Replace these with your actual pickup points and default destination.
-const PICKUP_LOCATIONS = ['Mzuzu Depot', 'Mzimba Boma', 'Jenda', 'Champhila'];
-const DEFAULT_DESTINATION = 'MUST';
+import { getBrandStyle } from '../utils/branding.js';
+import { Stepper } from '../components/ui.jsx';
 
 function RegisterPage() {
+  const { slug, tripId } = useParams();
+  const [organizer, setOrganizer] = useState(null);
+  const [trip, setTrip] = useState(null);
+  const [seatCount, setSeatCount] = useState(0);
+  const [pickupLocations, setPickupLocations] = useState([]);
+  const [isLoadingTrip, setIsLoadingTrip] = useState(true);
   const [form, setForm] = useState({
     fullname: '',
+    email: '',
     phone: '',
-    pickup_location: PICKUP_LOCATIONS[0],
-    destination: DEFAULT_DESTINATION,
+    pickup_location: '',
+    destination: '',
   });
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [passengerNames, setPassengerNames] = useState({});
   const [takenSeats, setTakenSeats] = useState([]);
   const [seatNames, setSeatNames] = useState({});
+  const [chosenAmountPerSeat, setChosenAmountPerSeat] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [showSeatMap, setShowSeatMap] = useState(false);
+  const [activeStep, setActiveStep] = useState(1);
 
-  const totalAmount = useMemo(() => selectedSeats.length * PRICE_PER_SEAT, [selectedSeats.length]);
+  const amountPerSeat = trip?.price_mode === 'flexible'
+    ? Number(chosenAmountPerSeat)
+    : Number(trip?.price_per_seat || 0);
+  const totalAmount = useMemo(() => selectedSeats.length * amountPerSeat, [selectedSeats.length, amountPerSeat]);
+  const minimumAmount = Math.max(Number(trip?.min_amount) || 0, 100);
+  const maximumAmount = trip?.max_amount === null || trip?.max_amount === undefined ? null : Number(trip.max_amount);
+  const validFlexibleAmount = trip?.price_mode !== 'flexible'
+    || (Number.isInteger(amountPerSeat) && amountPerSeat >= minimumAmount && (maximumAmount === null || amountPerSeat <= maximumAmount));
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -34,6 +46,32 @@ function RegisterPage() {
       [name]: value,
     }));
   };
+
+  function goToStep(nextStep) {
+    setError('');
+    if (nextStep > activeStep && activeStep === 1) {
+      if (!form.fullname.trim() || !form.phone.trim() || !form.pickup_location) {
+        setError('Enter your name, phone number, and pickup location to continue.');
+        return;
+      }
+      if (form.email && !document.getElementById('booking-email')?.checkValidity()) {
+        setError('Enter a valid email address or leave the email field blank.');
+        return;
+      }
+    }
+    if (nextStep > activeStep && activeStep === 2) {
+      if (selectedSeats.length === 0) {
+        setError('Select at least one available seat to continue.');
+        return;
+      }
+      const missingPassenger = selectedSeats.slice(1).find((seat) => !passengerNames[seat]?.trim());
+      if (missingPassenger) {
+        setError(`Please enter the passenger name for seat ${missingPassenger}.`);
+        return;
+      }
+    }
+    setActiveStep(nextStep);
+  }
 
   const handleSeatToggle = (seat) => {
     if (takenSeats.includes(seat)) return; // cannot toggle a taken seat
@@ -52,19 +90,44 @@ function RegisterPage() {
   };
 
   useEffect(() => {
-    async function loadTaken() {
+    let active = true;
+    async function loadTrip() {
       try {
-        const resp = await api.get('/api/seats');
-        setTakenSeats(resp.data.seats || []);
-        setSeatNames(resp.data.seatNames || {});
+        const { data: publicPage } = await api.get(`/api/public/organizers/${encodeURIComponent(slug)}`);
+        if (!active) return;
+        setOrganizer(publicPage.organizer);
+        if (publicPage.bookingsClosed) {
+          setError('Bookings are currently closed for this organiser.');
+          return;
+        }
+        const currentTrip = publicPage.trips.find((item) => item.id === tripId);
+        if (!currentTrip) {
+          setError('This trip is not currently available for booking.');
+          return;
+        }
+        setTrip(currentTrip);
+        setChosenAmountPerSeat(String(currentTrip.price_per_seat || currentTrip.min_amount || ''));
+        setSeatCount(currentTrip.seat_count);
+        setPickupLocations(currentTrip.pickup_locations || []);
+        setForm((current) => ({
+          ...current,
+          pickup_location: currentTrip.pickup_locations?.[0] || '',
+          destination: currentTrip.destination,
+        }));
+        const { data: seats } = await api.get(`/api/public/trips/${encodeURIComponent(tripId)}/seats`);
+        if (!active) return;
+        setTakenSeats(seats.seats || []);
+        setSeatNames(seats.seatNames || {});
       } catch (err) {
-        // ignore load errors; seats will appear available
-        console.warn('Unable to load taken seats', err?.message || err);
+        if (active) setError(err?.response?.data?.message || 'Unable to load this trip.');
+      } finally {
+        if (active) setIsLoadingTrip(false);
       }
     }
 
-    loadTaken();
-  }, []);
+    loadTrip();
+    return () => { active = false; };
+  }, [slug, tripId]);
 
   function SeatMapModal({ open, onClose, selectedSeats, onToggle, takenSeats, seatNames }) {
     const [infoSeat, setInfoSeat] = useState(null);
@@ -73,13 +136,13 @@ function RegisterPage() {
 
     // layout: 2 seats on left, aisle, 3 seats on right (matches the desired bus seating)
     const perRow = 5; // 2 + aisle + 3
-    const rows = Math.ceil(SEAT_COUNT / perRow);
+    const rows = Math.ceil(seatCount / perRow);
     const seats = [];
     let counter = 1;
     for (let r = 0; r < rows; r++) {
       const row = [];
       for (let c = 0; c < perRow; c++) {
-        if (counter <= SEAT_COUNT) {
+        if (counter <= seatCount) {
           row.push(counter.toString());
         } else {
           row.push(null);
@@ -101,14 +164,14 @@ function RegisterPage() {
       onToggle(seat);
     };
 
-    const seatButton = (seat, rowIndex) => {
-      if (!seat) return <div key={`empty-${rowIndex}-${Math.random()}`} />;
+    const seatButton = (seat, rowIndex, seatIndex) => {
+      if (!seat) return <div key={`empty-${rowIndex}-${seatIndex}`} />;
 
       const selected = selectedSeats.includes(seat);
       const isPayer = payerSeat === seat;
       const isTaken = takenSeats.includes(seat);
 
-      const baseClass = 'rounded-md border w-9 h-8 text-xs font-semibold transition';
+      const baseClass = 'flex h-11 w-11 items-center justify-center rounded-xl border text-sm font-semibold transition';
 
       const className = isTaken
         ? `${baseClass} border-red-500 bg-red-100 text-red-700 cursor-pointer`
@@ -152,15 +215,15 @@ function RegisterPage() {
 
             <div className="rounded-2xl border border-slate-200 p-4">
               {/* front of the bus: steering wheel + front seat */}
-              <div className="grid grid-cols-[1fr_1fr_0.5rem_1fr_1fr] items-center gap-2 mb-3">
+              <div className="mb-3 grid grid-cols-[1fr_1fr_0.5rem_1fr_1fr] items-center gap-2">
                 <div className="col-span-2 flex justify-start">
-                  <div className="rounded-md border border-yellow-400 bg-yellow-100 w-9 h-8 flex items-center justify-center text-yellow-800">
-                    🛞
+                  <div className="flex h-11 items-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-3 text-xs font-semibold text-slate-800">
+                    <BusFront size={16} aria-hidden="true" /> FRONT
                   </div>
                 </div>
                 <div />
                 <div className="col-span-2 flex justify-end">
-                  <div className="rounded-md border border-yellow-400 bg-yellow-100 w-9 h-8" />
+                  <div className="h-11 w-11 rounded-xl border border-yellow-500 bg-yellow-100" aria-hidden="true" />
                 </div>
               </div>
 
@@ -168,7 +231,7 @@ function RegisterPage() {
                 {seats.map((row, rowIndex) => (
                   <div key={rowIndex} className="grid grid-cols-[1fr_1fr_0.5rem_1fr_1fr] items-center gap-2">
                     <div className="col-span-2 grid grid-cols-2 gap-2">
-                      {row.slice(0, 2).map((seat) => seatButton(seat, rowIndex))}
+                      {row.slice(0, 2).map((seat, seatIndex) => seatButton(seat, rowIndex, seatIndex))}
                     </div>
 
                     <div className="h-8 flex items-center justify-center">
@@ -176,7 +239,7 @@ function RegisterPage() {
                     </div>
 
                     <div className="col-span-2 grid grid-cols-3 gap-2">
-                      {row.slice(2, 5).map((seat) => seatButton(seat, rowIndex))}
+                      {row.slice(2, 5).map((seat, seatIndex) => seatButton(seat, rowIndex, seatIndex + 2))}
                     </div>
                   </div>
                 ))}
@@ -187,6 +250,10 @@ function RegisterPage() {
           {/* footer: stays fixed at the bottom, so Done/legend are always visible without scrolling */}
           <div className="shrink-0 border-t border-slate-100 p-6 pt-4">
             <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded border border-green-500 bg-green-100" />
+                <span className="text-sm text-slate-700">Available</span>
+              </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-amber-100 border border-amber-400" />
                 <span className="text-sm text-slate-700">Selected</span>
@@ -226,6 +293,10 @@ function RegisterPage() {
       setError('Please select at least one seat before continuing.');
       return;
     }
+    if (!validFlexibleAmount) {
+      setError(`Enter a whole-number amount between ${formatCurrency(minimumAmount)}${maximumAmount === null ? '+' : ` and ${formatCurrency(maximumAmount)}`} per seat.`);
+      return;
+    }
 
     const missingPassenger = selectedSeats.slice(1).find((seat) => !passengerNames[seat]?.trim());
     if (missingPassenger) {
@@ -241,14 +312,14 @@ function RegisterPage() {
         name: index === 0 ? form.fullname.trim() : passengerNames[seat].trim(),
       }));
 
-      const response = await api.post('/api/payment', {
+      const response = await api.post(`/api/public/trips/${encodeURIComponent(tripId)}/payment`, {
         fullname: form.fullname,
+        email: form.email.trim() || undefined,
         phone: form.phone,
         pickup_location: form.pickup_location,
-        destination: form.destination,
-        seats: selectedSeats.length,
         selected_seats: selectedSeats,
         passengers,
+        ...(trip.price_mode === 'flexible' ? { chosen_amount_per_seat: amountPerSeat } : {}),
       });
 
       const { checkoutUrl } = response.data;
@@ -264,26 +335,41 @@ function RegisterPage() {
     }
   };
 
+  if (isLoadingTrip) {
+    return <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 text-center shadow-soft">Loading trip...</section>;
+  }
+  if (!trip) {
+    return (
+      <section className="mx-auto max-w-3xl rounded-3xl bg-white p-8 text-center shadow-soft">
+        <h1 className="text-2xl font-semibold text-slate-900">{organizer?.name || 'Booking unavailable'}</h1>
+        <p className="mt-3 text-slate-600">{error || 'Bookings are currently closed.'}</p>
+        <a href={`/#/o/${encodeURIComponent(slug)}`} className="mt-5 inline-flex rounded-full bg-emerald-600 px-5 py-3 font-semibold text-white">Back to trips</a>
+      </section>
+    );
+  }
+
   return (
-    <section className="mx-auto max-w-3xl overflow-hidden rounded-3xl bg-white shadow-soft shadow-slate-200">
+    <section className="mx-auto max-w-3xl overflow-hidden rounded-3xl bg-white shadow-soft shadow-slate-200" style={getBrandStyle(organizer?.primary_color)}>
       {/* Photo banner with the heading overlaid directly on it */}
       <div className="relative h-64 w-full overflow-hidden sm:h-72">
         <img src="/bus-photo1.jpg.png" alt="" className="h-full w-full object-cover" />
         <div
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.1) 30%, rgba(4,120,87,0.85) 100%)',
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.1) 30%, color-mix(in srgb, var(--brand) 88%, transparent) 100%)',
           }}
         />
         <div className="absolute inset-x-0 bottom-0 space-y-2 p-6 text-center sm:p-8">
-          <p className="text-sm font-medium uppercase tracking-[0.3em] text-emerald-100">Mpoto Ride</p>
-          <h2 className="text-3xl font-semibold text-white">Complete your booking</h2>
-          <p className="mx-auto max-w-md text-white/90">Select seats, add names for additional passengers, then proceed to payment.</p>
+          <p className="text-sm font-medium uppercase tracking-[0.3em] text-white/80">{organizer?.name}</p>
+          <h2 className="text-3xl font-semibold text-white">{trip.title}</h2>
+          <p className="mx-auto max-w-md text-white/90">{trip.origin} to {trip.destination}. {trip.price_mode === 'flexible' ? `Choose from ${formatCurrency(trip.min_amount)}${trip.max_amount ? ` to ${formatCurrency(trip.max_amount)}` : ' per seat or more'}.` : `${formatCurrency(trip.price_per_seat)} per seat.`} Select seats and names, then proceed to payment.</p>
         </div>
       </div>
 
-      <div className="p-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="p-5 pb-28 sm:p-8 sm:pb-8">
+        <div className="mb-6"><Stepper steps={['Details', 'Seats', 'Pay']} activeStep={activeStep} /></div>
+        <form id="booking-form" onSubmit={handleSubmit} className="space-y-6">
+        {activeStep === 1 && <>
         <div className="grid gap-6 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Full Name</span>
@@ -311,6 +397,13 @@ function RegisterPage() {
           </label>
         </div>
 
+        <label className="block">
+          <span className="text-sm font-medium text-slate-700">Email (optional)</span>
+          <input id="booking-email" name="email" type="email" value={form.email} onChange={handleChange}
+            className="mt-2 w-full rounded-3xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
+            placeholder="you@example.com" />
+        </label>
+
         <div className="grid gap-6 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Pickup Location</span>
@@ -321,7 +414,7 @@ function RegisterPage() {
               required
               className="mt-2 w-full rounded-3xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
             >
-              {PICKUP_LOCATIONS.map((location) => (
+              {pickupLocations.map((location) => (
                 <option key={location} value={location}>
                   {location}
                 </option>
@@ -330,17 +423,12 @@ function RegisterPage() {
           </label>
           <label className="block">
             <span className="text-sm font-medium text-slate-700">Destination</span>
-            <input
-              name="destination"
-              type="text"
-              value={form.destination}
-              onChange={handleChange}
-              required
-              className="mt-2 w-full rounded-3xl border border-emerald-100 bg-emerald-50/40 px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white"
-            />
+            <div className="mt-2 rounded-3xl border border-emerald-100 bg-slate-100 px-4 py-3 text-slate-700">{trip.destination}</div>
           </label>
         </div>
+        </>}
 
+        {activeStep === 2 && <>
         <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div>
@@ -373,6 +461,22 @@ function RegisterPage() {
           />
         </div>
 
+        </>}
+
+        {activeStep === 3 && <>
+        {trip.price_mode === 'flexible' ? <div className="rounded-3xl border border-emerald-100 bg-white p-5">
+          <label className="block text-sm font-semibold text-slate-800">Choose an amount per seat (MWK)
+            <input type="number" inputMode="numeric" min={minimumAmount} max={maximumAmount || undefined} step="1" value={chosenAmountPerSeat}
+              onChange={(event) => setChosenAmountPerSeat(event.target.value)}
+              aria-invalid={Boolean(chosenAmountPerSeat) && !validFlexibleAmount}
+              aria-describedby="flexible-price-help flexible-price-error"
+              className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-lg text-slate-900 focus:border-emerald-600 focus:outline-none" />
+          </label>
+          <p id="flexible-price-help" className="mt-2 text-sm text-slate-600">Per-seat range: {formatCurrency(minimumAmount)}{maximumAmount === null ? ' or more' : `–${formatCurrency(maximumAmount)}`}. Choose a whole number.</p>
+          <div className="mt-3 flex flex-wrap gap-2">{[minimumAmount, Number(trip.price_per_seat), maximumAmount].filter((value, index, list) => Number.isInteger(value) && value >= minimumAmount && (maximumAmount === null || value <= maximumAmount) && list.indexOf(value) === index).map((value) => <button key={value} type="button" onClick={() => setChosenAmountPerSeat(String(value))} className="rounded-full border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-900">MWK {formatCurrency(value)}</button>)}</div>
+          {chosenAmountPerSeat && !validFlexibleAmount && <p id="flexible-price-error" role="alert" className="mt-2 text-sm text-red-700">Enter a whole number within this trip’s allowed range.</p>}
+        </div> : <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">Fixed price: {formatCurrency(trip.price_per_seat)} per seat</p>}
+
         {selectedSeats.length > 1 && (
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-6">
             <p className="mb-4 text-sm font-medium text-slate-700">Passenger names for additional seats</p>
@@ -403,20 +507,30 @@ function RegisterPage() {
           </div>
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-4">
             <p className="text-sm font-medium text-slate-700">Total Amount</p>
+            {trip.price_mode === 'flexible' && <p className="mt-1 text-xs text-slate-500">{formatCurrency(amountPerSeat)} × {selectedSeats.length} seat{selectedSeats.length === 1 ? '' : 's'}</p>}
             <p className="mt-3 text-3xl font-semibold text-emerald-700">{formatCurrency(totalAmount)}</p>
           </div>
         </div>
 
         {error && <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="inline-flex w-full justify-center rounded-full bg-emerald-600 px-6 py-4 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isSubmitting ? 'Redirecting to PayChangu...' : 'Proceed to Payment'}
-        </button>
+        </>}
+        {error && activeStep !== 3 && <div className="rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+          {activeStep > 1 && <button type="button" onClick={() => goToStep(activeStep - 1)} className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-300 px-6 py-3 text-sm font-semibold text-slate-800">Back</button>}
+          {activeStep < 3
+            ? <button type="button" onClick={() => goToStep(activeStep + 1)} className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-brand px-6 py-3 text-base font-semibold text-white sm:ml-auto sm:w-auto">{activeStep === 1 ? 'Choose seats' : 'Review and pay'}</button>
+            : <button type="submit" disabled={isSubmitting} className="inline-flex min-h-11 w-full justify-center rounded-full bg-brand px-6 py-3 text-base font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">{isSubmitting ? 'Redirecting to PayChangu...' : 'Proceed to Payment'}</button>}
+        </div>
       </form>
+      </div>
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-soft backdrop-blur sm:hidden">
+        <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
+          <div><p className="text-xs text-slate-600">{selectedSeats.length} seat{selectedSeats.length === 1 ? '' : 's'} · Total</p><p className="text-lg font-bold text-slate-950">{formatCurrency(totalAmount)}</p></div>
+          {activeStep === 3
+            ? <button form="booking-form" type="submit" disabled={isSubmitting} className="min-h-11 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{isSubmitting ? 'Please wait…' : 'Pay now'}</button>
+            : <button type="button" onClick={() => goToStep(activeStep + 1)} className="min-h-11 rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white">{activeStep === 1 ? 'Continue' : 'Review and pay'}</button>}
+        </div>
       </div>
     </section>
   );
