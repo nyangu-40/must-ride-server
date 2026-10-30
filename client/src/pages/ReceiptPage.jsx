@@ -72,7 +72,7 @@ function ReceiptPage() {
   function downloadPdf() {
     const document = new jsPDF();
     document.setFontSize(20);
-    document.text(receipt.organizer?.name || 'Must Ride', 20, 24);
+    document.text(receipt.organizer?.name || 'Tiyende Bookings', 20, 24);
     document.setFontSize(16);
     document.text('Booking receipt', 20, 38);
     document.setFontSize(11);
@@ -87,8 +87,8 @@ function ReceiptPage() {
       `Amount: ${formatCurrency(receipt.amount)}`,
       `Reference: ${receipt.payment_reference || '—'}`,
     ].forEach((line, index) => document.text(line, 20, 54 + index * 9, { maxWidth: 170 }));
-    document.text('Powered by Must Ride', 20, 150);
-    document.save(`must-ride-receipt-${id}.pdf`);
+    document.text('Powered by Tiyende Bookings', 20, 150);
+    document.save(`tiyende-bookings-receipt-${id}.pdf`);
   }
 
   async function shareReceipt() {
@@ -114,7 +114,7 @@ function ReceiptPage() {
         <div className="flex shrink-0 flex-col justify-between gap-4 bg-emerald-700 p-5 sm:w-48" style={{ backgroundColor: 'var(--brand)', color: 'var(--brand-contrast)' }}>
           <div>
             {receipt.organizer?.logo_url && <img src={receipt.organizer.logo_url} alt="" className="mb-2 h-10 w-10 rounded-full bg-white object-contain p-1" />}
-            <p className="text-xs font-medium uppercase tracking-[0.2em]">{receipt.organizer?.name || 'Must Ride'}</p>
+            <p className="text-xs font-medium uppercase tracking-[0.2em]">{receipt.organizer?.name || 'Tiyende Bookings'}</p>
             <p
               className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                 isPaid ? 'bg-white text-emerald-700' : 'bg-amber-100 text-amber-700'
@@ -188,7 +188,7 @@ function ReceiptPage() {
           {shareMessage && <p role="status" className="mt-3 text-sm text-slate-700">{shareMessage}</p>}
         </div>
       </div>
-      <p className="pb-4 text-center text-xs text-slate-400">Powered by Must Ride</p>
+      <p className="pb-4 text-center text-xs text-slate-400">Powered by Tiyende Bookings</p>
     </section>
   );
 }

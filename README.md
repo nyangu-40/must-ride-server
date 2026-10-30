@@ -1,4 +1,4 @@
-# MUST Ride
+# Tiyende Bookings
 
 Multi-tenant bus booking with a React/Vite passenger app, an Express API, Supabase
 storage and authentication, and PayChangu hosted checkout.

@@ -33,7 +33,7 @@ function LoginPage() {
 
   return (
     <section className="mx-auto max-w-md rounded-3xl bg-white p-7 shadow-soft sm:p-9">
-      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">Must Ride</p>
+      <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">Tiyende Bookings</p>
       <h1 className="mt-2 text-3xl font-semibold text-slate-900">Sign in</h1>
       <p className="mt-2 text-slate-600">Access your organiser dashboard.</p>
       <form className="mt-6 space-y-4" onSubmit={handleSubmit}>

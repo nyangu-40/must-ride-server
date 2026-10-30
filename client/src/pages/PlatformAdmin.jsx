@@ -28,7 +28,7 @@ export function PlatformLayout() {
   const badge = (label) => label === 'Applications' && pendingCount > 0 && <span className="ml-2 rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-slate-950">{pendingCount}</span>;
   return <div className="flex min-h-0 flex-1 flex-col text-slate-900 lg:flex-row">
     <aside className="hidden w-60 shrink-0 flex-col bg-slate-950 text-white lg:flex">
-      <div className="shrink-0 border-b border-white/10 p-5"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-300">Platform Admin</p><p className="mt-1 text-lg font-semibold">Must Ride Platform</p></div>
+      <div className="shrink-0 border-b border-white/10 p-5"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-300">Platform Admin</p><p className="mt-1 text-lg font-semibold">Tiyende Bookings</p></div>
       <nav aria-label="Platform administration" className="flex-1 space-y-1 overflow-y-auto p-3">
         {navItems.map(([label, to]) => <NavLink key={to} to={to} end={to === '/platform'}
           className={({ isActive }) => `block whitespace-nowrap rounded-xl px-4 py-2.5 text-sm ${isActive ? 'bg-emerald-800 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>{label}{badge(label)}</NavLink>)}
@@ -36,7 +36,7 @@ export function PlatformLayout() {
       <div className="shrink-0 border-t border-white/10 p-3"><button type="button" onClick={() => signOut()} className="w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left text-sm text-slate-300 hover:bg-slate-800"><LogOut size={16} aria-hidden="true" className="mr-2 inline" />Sign out</button></div>
     </aside>
     <header className="shrink-0 bg-slate-950 text-white lg:hidden">
-      <div className="flex items-center justify-between px-4 py-3"><p className="font-semibold">Must Ride Platform</p><button type="button" onClick={() => signOut()} className="text-sm text-slate-300"><LogOut size={16} aria-hidden="true" className="mr-1 inline" />Sign out</button></div>
+      <div className="flex items-center justify-between px-4 py-3"><p className="font-semibold">Tiyende Bookings</p><button type="button" onClick={() => signOut()} className="text-sm text-slate-300"><LogOut size={16} aria-hidden="true" className="mr-1 inline" />Sign out</button></div>
       <nav aria-label="Platform administration" className="flex gap-2 overflow-x-auto px-3 pb-3">
         {navItems.map(([label, to]) => <NavLink key={to} to={to} end={to === '/platform'}
           className={({ isActive }) => `whitespace-nowrap rounded-xl px-4 py-2 text-sm ${isActive ? 'bg-emerald-800 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>{label}{badge(label)}</NavLink>)}

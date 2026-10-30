@@ -371,7 +371,7 @@ function AdminPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'must-ride-registrations.csv');
+    link.setAttribute('download', 'tiyende-bookings-registrations.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -403,9 +403,9 @@ function AdminPage() {
 
     const html = `
       <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-        <head><meta charset="utf-8"><title>Mpoto Ride Registrations</title></head>
+        <head><meta charset="utf-8"><title>Tiyende Bookings Registrations</title></head>
         <body>
-          <h2>Mpoto Ride — Registrations</h2>
+          <h2>Tiyende Bookings — Registrations</h2>
           <table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:12px;">
             <thead><tr>${headerRow}</tr></thead>
             <tbody>${bodyRows}</tbody>
@@ -418,7 +418,7 @@ function AdminPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'must-ride-registrations.doc');
+    link.setAttribute('download', 'tiyende-bookings-registrations.doc');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -457,7 +457,7 @@ function AdminPage() {
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
-    doc.text('Mpoto Ride', cardX + 24, y + 32);
+    doc.text('Tiyende Bookings', cardX + 24, y + 32);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
     doc.text('Official Booking Receipt', cardX + 24, y + 50);
@@ -579,7 +579,7 @@ function AdminPage() {
 
     const whatsappNumber = toWhatsAppNumber(item.phone);
     const message = encodeURIComponent(
-      `Hello ${item.fullname}, this is your Mpoto Ride receipt.\n\nThank you for riding with us!`
+      `Hello ${item.fullname}, this is your Tiyende Bookings receipt.\n\nThank you for riding with us!`
     );
 
     window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');

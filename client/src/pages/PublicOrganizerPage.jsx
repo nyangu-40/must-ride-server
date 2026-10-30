@@ -185,7 +185,7 @@ function PublicOrganizerPage() {
 
       <footer className="flex flex-col items-center gap-1 border-t border-slate-100 px-6 py-5 text-center text-xs text-slate-600">
         <span className="inline-flex items-center gap-1"><ShieldCheck size={14} aria-hidden="true" /> Payments are verified securely</span>
-        <span>Powered by Must Ride</span>
+        <span>Powered by Tiyende Bookings</span>
       </footer>
     </section>
   );

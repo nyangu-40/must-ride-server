@@ -23,7 +23,7 @@ function PlatformHomePage() {
   return <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-soft">
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
       <PageContainer className="flex items-center justify-between gap-4 px-5 py-4 sm:px-8">
-        <Link to="/" className="flex items-center gap-2 font-bold tracking-tight text-slate-950"><span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-800 text-white"><BusFront size={20} /></span>Must Ride</Link>
+        <Link to="/" className="flex items-center gap-2 font-bold tracking-tight text-slate-950"><span className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-800 text-white"><BusFront size={20} /></span>Tiyende Bookings</Link>
         <nav aria-label="Main navigation" className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
           <a href="#features" className="hover:text-emerald-900">Features</a><a href="#how-it-works" className="hover:text-emerald-900">How it works</a><a href="#faq" className="hover:text-emerald-900">FAQ</a><Link to="/login" className="hover:text-emerald-900">Sign in</Link><Link to="/become-organizer" className="rounded-full bg-emerald-800 px-4 py-2.5 font-semibold text-white hover:bg-emerald-900">Become an organizer</Link>
         </nav>
@@ -82,7 +82,7 @@ function PlatformHomePage() {
 
       <section className="px-5 py-16 text-center sm:px-8"><PageContainer><div className="mx-auto max-w-3xl"><h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Ready to put your next trip online?</h2><p className="mt-4 text-lg text-slate-700">Apply today and get a branded page for your passengers.</p><Link to="/become-organizer" className="mt-7 inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-emerald-800 px-6 py-3 font-semibold text-white hover:bg-emerald-900">Become an organizer <ArrowRight size={18} /></Link></div></PageContainer></section>
     </main>
-    <footer className="border-t border-slate-200 bg-white px-5 py-6 text-sm text-slate-700 sm:px-8"><PageContainer className="flex flex-col items-center justify-between gap-3 sm:flex-row"><span>© {new Date().getFullYear()} Must Ride</span><div className="flex gap-5"><Link to="/login" className="hover:text-emerald-900">Sign in</Link><Link to="/become-organizer" className="hover:text-emerald-900">Become an organizer</Link></div></PageContainer></footer>
+    <footer className="border-t border-slate-200 bg-white px-5 py-6 text-sm text-slate-700 sm:px-8"><PageContainer className="flex flex-col items-center justify-between gap-3 sm:flex-row"><span>© {new Date().getFullYear()} Tiyende Bookings</span><div className="flex gap-5"><Link to="/login" className="hover:text-emerald-900">Sign in</Link><Link to="/become-organizer" className="hover:text-emerald-900">Become an organizer</Link></div></PageContainer></footer>
   </div>;
 }
 

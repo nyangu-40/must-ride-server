@@ -95,7 +95,7 @@ export function OrganizerLayout() {
         <main ref={mainRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8">
             <Outlet />
-            <footer className="mt-10 pb-2 text-center text-xs text-slate-400">Powered by Must Ride</footer>
+            <footer className="mt-10 pb-2 text-center text-xs text-slate-400">Powered by Tiyende Bookings</footer>
           </div>
         </main>
 
