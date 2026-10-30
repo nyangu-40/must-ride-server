@@ -31,7 +31,7 @@ const payoutSchema = Joi.object({
 
 function requirePayoutsEnabled(res) {
   if (PAYOUTS_ENABLED) return true;
-  res.status(503).json({ message: 'Payouts are not enabled for this platform.' });
+  res.status(503).json({ message: 'Withdrawals are currently unavailable. The platform administrator must enable PayChangu payouts before you can request a withdrawal.' });
   return false;
 }
 

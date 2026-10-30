@@ -71,9 +71,18 @@ configuration error until `PAYCHANGU_SECRET_KEY` is set. Configure
 
 `SUPERADMIN_EMAIL` and `SUPERADMIN_PASSWORD` are needed only to seed the
 superadmin. `PAYOUTS_ENABLED` defaults to `false`; enable it only after PayChangu
-payouts have been activated for the account. `IMPERSONATION_SECRET` is needed
-for short-lived, read-only platform-admin view-as sessions. Never commit actual
-environment values.
+payouts have been activated for the account. To allow organizers to withdraw
+from their Wallet page, configure `PAYCHANGU_SECRET_KEY` and
+`PAYCHANGU_WEBHOOK_SECRET`, set `PAYOUTS_ENABLED=true` in the server's deployment
+environment, and restart/redeploy the server. PayChangu must have payouts
+activated for the account; its payout notification URL is
+`SERVER_URL/webhook/paychangu/payout`. Organizers can then choose a withdrawal
+amount and send it to mobile money or a bank account. Pending withdrawals reserve
+the requested amount until PayChangu confirms success or failure. Do not enable
+the flag before the provider account and credentials are ready.
+
+`IMPERSONATION_SECRET` is needed for short-lived, read-only platform-admin
+view-as sessions. Never commit actual environment values.
 `MIN_PAYMENT_AMOUNT` sets the minimum per-seat amount for flexible trips and
 defaults to MWK 100.
 

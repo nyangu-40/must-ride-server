@@ -51,16 +51,14 @@ export function OrganizerLayout() {
   const initial = (user?.email || organizer?.name || 'O').slice(0, 1).toUpperCase();
   const sideLink = ({ isActive }) => `relative flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition ${isActive ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`;
   const tabLink = ({ isActive }) => `flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[0.7rem] font-medium ${isActive ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600'}`;
-  const brandMark = organizer?.logo_url
-    ? <img src={organizer.logo_url} alt="" className="h-9 w-9 shrink-0 rounded-xl object-contain" />
-    : <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-800"><BusFront size={18} aria-hidden="true" /></span>;
+  const brandMark = <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-800 text-white"><BusFront size={18} aria-hidden="true" /></span>;
+  const brandLockup = <span className="flex min-w-0 items-center gap-3">{brandMark}<span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-900">MUST RIDE</span><span className="block truncate text-xs text-slate-500">Tiyende Bookings</span></span></span>;
   return (
     <div className="flex min-h-0 flex-1">
       {/* Sidebar: fixed on desktop, never scrolls with the page */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
         <div className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-100 px-5">
-          {brandMark}
-          <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{organizer?.name || 'Organizer'}</p><p className="truncate text-xs text-slate-500">Organizer workspace</p></div>
+          {brandLockup}
         </div>
         <nav aria-label="Organizer workspace" className="flex-1 space-y-1 overflow-y-auto p-3">
           <p className="px-4 pb-1 pt-2 text-[0.7rem] font-semibold uppercase tracking-wider text-slate-400">Workspace</p>
@@ -82,7 +80,7 @@ export function OrganizerLayout() {
         {/* Top bar: fixed */}
         <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="lg:hidden">{brandMark}</span>
+            <span className="lg:hidden">{brandLockup}</span>
             <p className="truncate text-sm text-slate-500"><span className="hidden lg:inline">{organizer?.name || 'Organizer'} <span aria-hidden="true">/</span> </span><span className="font-semibold text-slate-900">{section}</span></p>
           </div>
           <div className="flex min-w-0 items-center gap-2">
@@ -612,7 +610,7 @@ export function OrganizerWallet() {
 
   const methods = method === 'mobile_money' ? lookups.operators : lookups.banks;
   const chosenKey = method === 'mobile_money' ? 'operator_id' : 'bank_id';
-  return <div className="space-y-5"><div><h1 className="text-2xl font-semibold">Wallet</h1><p className="mt-1 text-slate-500">Your internal ledger and payout history.</p></div>
+  return <div className="space-y-5"><div><h1 className="text-2xl font-semibold">Wallet</h1><p className="mt-1 text-slate-500">Request a withdrawal to your mobile money wallet or bank account.</p></div>
     {(error || transactionsError) && <p role="alert" className="rounded-2xl bg-red-50 p-3 text-red-700">{error || transactionsError}</p>}
     {(payoutsError || payoutMessage) && <p role="alert" className="rounded-2xl bg-amber-50 p-3 text-amber-900">{payoutMessage || payoutsError}</p>}
     <section className={cardClass}>{loading ? 'Loading wallet...' : <><p className="text-sm text-slate-500">Available balance</p><p className="mt-2 text-3xl font-semibold">{formatCurrency(wallet?.available_balance || 0)}</p><p className="mt-2 text-sm text-slate-500">Pending withdrawals: {formatCurrency(wallet?.pending_payouts || 0)}</p><button onClick={openWithdraw} className="mt-4 rounded-full bg-emerald-600 px-5 py-2.5 font-semibold text-white">Withdraw</button></>}</section>
