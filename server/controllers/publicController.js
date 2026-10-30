@@ -60,7 +60,7 @@ export async function getOrganizerPublicPage(req, res, next) {
     if (!bookingsClosed) {
       const { data, error } = await supabase
         .from('trips')
-        .select('id, title, origin, destination, departure_at, price_per_seat, price_mode, min_amount, max_amount, seat_count, pickup_locations, status')
+        .select('id, title, origin, destination, departure_at, price_per_seat, price_mode, min_amount, max_amount, seat_count, seat_layout, pickup_locations, status, description, amenities, cover_image_url, booking_image_url')
         .eq('organizer_id', organizer.id)
         .eq('status', 'open')
         .order('departure_at', { ascending: true, nullsFirst: false });
@@ -218,16 +218,21 @@ export async function getTripSeats(req, res, next) {
     }
     const registrationsById = new Map(registrations.map((row) => [row.id, row]));
     const seatNames = {};
+    const seatInfo = {};
     for (const seat of visibleSeats) {
       const registration = registrationsById.get(seat.registration_id);
       const passenger = registration?.passengers?.find((person) => person.seat === seat.seat_label);
-      if (registration) seatNames[seat.seat_label] = passenger?.name || registration.fullname;
+      const name = registration ? passenger?.name || registration.fullname : null;
+      if (name) seatNames[seat.seat_label] = name;
+      seatInfo[seat.seat_label] = { name, status: seat.status };
     }
 
     return res.json({
       seats: visibleSeats.map((row) => row.seat_label),
       seatNames,
+      seatInfo,
       seat_count: trip.seat_count,
+      seat_layout: trip.seat_layout || '2+3',
       price_per_seat: trip.price_per_seat,
       price_mode: trip.price_mode || 'fixed',
       min_amount: trip.min_amount,

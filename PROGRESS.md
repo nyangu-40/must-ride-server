@@ -35,6 +35,14 @@ NEXT STEP: Resume Part C by checking the current UI diff, finishing remaining de
 - Summary 2/3: Replaced `/` with the SaaS marketing home, responsive CTAs, feature grid, trust messaging, onboarding steps, and FAQ.
 - Summary 3/3: Platform-admin pages now use light content surfaces while retaining the dark sidebar; the organizer workspace has responsive sidebar/bottom navigation, onboarding checklist, link copy, and QR preview. Booking now has a Details → Seats → Pay stepper and mobile sticky payment summary; receipts support PDF download and sharing; public pages show secure-payment badges; dynamic brand text color now uses WCAG luminance comparison. These latest edits have not yet been validated.
 
+## Part D: Seat layouts, shared seat map, fixed dashboard shell
+
+- Status: Complete in code; migration 005 not applied to the live Supabase project.
+- Files: `server/database/migrations/005_seat_layout.sql` (+ rollback), organizer/public controllers (seat_layout); `client/src/components/SeatMap.jsx` (shared seat map + layout picker), `Illustrations.jsx`, `utils/seatLayouts.js`, `layouts/Layout.jsx`, organizer/platform dashboards, `RegisterPage.jsx`, `PlatformHomePage.jsx`.
+- Commands: Apply migration 005 in the Supabase SQL Editor. Roll back with `005_seat_layout_rollback.sql`.
+- Follow-up: `006_trip_booking_image.sql` adds a second trip photo (`booking_image_url`) shown on the booking page; trips can be deleted from the list and trip page (blocked once registrations exist); the passenger seat map opens as a pop-up.
+- Summary: Organizers choose a 2+3 or 2+2 layout per trip; passengers and organizers see the same seat map; extra seats ask for the passenger name; dashboards use a fixed sidebar/top bar with only the content area scrolling.
+
 ## Stage checklist
 
 - [x] Stage 2 — Database schema, rollback, RPCs, RLS, and superadmin seed written (migration not applied).

@@ -7,7 +7,7 @@ import {
   listRegistrations,
   listTrips,
 } from '../services/organizerService.js';
-import { MIN_PAYMENT_AMOUNT } from '../config/index.js';
+import { MIN_PAYMENT_AMOUNT, SUPABASE_URL } from '../config/index.js';
 
 const brandingSchema = Joi.object({
   name: Joi.string().trim().min(2),
@@ -27,8 +27,13 @@ const tripSchema = Joi.object({
   min_amount: Joi.number().integer().min(MIN_PAYMENT_AMOUNT).allow(null),
   max_amount: Joi.number().integer().min(MIN_PAYMENT_AMOUNT).allow(null),
   seat_count: Joi.number().integer().min(1).max(1000).required(),
+  seat_layout: Joi.string().valid('2+2', '2+3').default('2+3'),
   pickup_locations: Joi.array().items(Joi.string().trim().min(2)).min(1).required(),
   status: Joi.string().valid('draft', 'open', 'closed').default('draft'),
+  description: Joi.string().trim().max(600).allow('', null),
+  amenities: Joi.array().items(Joi.string().trim().min(1).max(40)).max(12),
+  cover_image_url: Joi.string().uri().max(500).allow('', null),
+  booking_image_url: Joi.string().uri().max(500).allow('', null),
 });
 
 const tripUpdateSchema = Joi.object({
@@ -41,9 +46,29 @@ const tripUpdateSchema = Joi.object({
   min_amount: Joi.number().integer().min(MIN_PAYMENT_AMOUNT).allow(null),
   max_amount: Joi.number().integer().min(MIN_PAYMENT_AMOUNT).allow(null),
   seat_count: Joi.number().integer().min(1).max(1000),
+  seat_layout: Joi.string().valid('2+2', '2+3'),
   pickup_locations: Joi.array().items(Joi.string().trim().min(2)).min(1),
   status: Joi.string().valid('draft', 'open', 'closed'),
+  description: Joi.string().trim().max(600).allow('', null),
+  amenities: Joi.array().items(Joi.string().trim().min(1).max(40)).max(12),
+  cover_image_url: Joi.string().uri().max(500).allow('', null),
+  booking_image_url: Joi.string().uri().max(500).allow('', null),
 }).min(1);
+
+// Cover images must be files this API stored for THIS organiser (no arbitrary external URLs).
+function isOwnCoverUrl(url, organizerId) {
+  if (!url) return true;
+  const base = String(SUPABASE_URL || '').replace(/\/$/, '');
+  return url.startsWith(`${base}/storage/v1/object/public/trip-covers/${organizerId}/`);
+}
+
+function cleanPresentation(value) {
+  const cleaned = { ...value };
+  if ('description' in cleaned) cleaned.description = cleaned.description || null;
+  if ('cover_image_url' in cleaned) cleaned.cover_image_url = cleaned.cover_image_url || null;
+  if ('booking_image_url' in cleaned) cleaned.booking_image_url = cleaned.booking_image_url || null;
+  return cleaned;
+}
 
 function normalizeTripPricing(trip) {
   const mode = trip.price_mode || 'fixed';
@@ -147,6 +172,24 @@ export async function uploadLogo(req, res, next) {
   }
 }
 
+export async function uploadTripCover(req, res, next) {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Select a cover image to upload.' });
+    const extension = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }[req.file.mimetype];
+    if (!extension) return res.status(400).json({ message: 'Cover image must be a PNG, JPEG, or WebP image.' });
+    const storagePath = `${req.organizer.id}/${crypto.randomUUID()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from('trip-covers').upload(storagePath, req.file.buffer, {
+      contentType: req.file.mimetype,
+      upsert: false,
+    });
+    if (uploadError) throw uploadError;
+    const { data: publicUrl } = supabase.storage.from('trip-covers').getPublicUrl(storagePath);
+    return res.status(201).json({ url: publicUrl.publicUrl });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function getTrips(req, res, next) {
   try {
     return res.json(await listTrips(req.organizer.id));
@@ -158,8 +201,12 @@ export async function getTrips(req, res, next) {
 export async function createTrip(req, res, next) {
   try {
     if (isExpired(req.organizer)) return res.status(403).json({ message: 'Your subscription has expired.' });
-    const { error: validation, value } = tripSchema.validate(req.body, { abortEarly: false });
+    const { error: validation, value: validated } = tripSchema.validate(req.body, { abortEarly: false });
     if (validation) return res.status(400).json(validationError(validation));
+    const value = cleanPresentation(validated);
+    if (!isOwnCoverUrl(value.cover_image_url, req.organizer.id) || !isOwnCoverUrl(value.booking_image_url, req.organizer.id)) {
+      return res.status(400).json({ message: 'Upload the cover image through the dashboard.' });
+    }
     const pricing = normalizeTripPricing(value);
     if (pricing.error) return res.status(400).json({ message: pricing.error });
     const { data, error } = await supabase.from('trips')
@@ -183,10 +230,39 @@ export async function getTripById(req, res, next) {
 
 export async function updateTrip(req, res, next) {
   try {
-    const { error: validation, value } = tripUpdateSchema.validate(req.body, { abortEarly: false });
+    const { error: validation, value: validated } = tripUpdateSchema.validate(req.body, { abortEarly: false });
     if (validation) return res.status(400).json(validationError(validation));
+    const value = cleanPresentation(validated);
+    if (!isOwnCoverUrl(value.cover_image_url, req.organizer.id) || !isOwnCoverUrl(value.booking_image_url, req.organizer.id)) {
+      return res.status(400).json({ message: 'Upload the cover image through the dashboard.' });
+    }
     const currentTrip = await getTrip(req.organizer.id, req.params.tripId);
     if (!currentTrip) return res.status(404).json({ message: 'Trip not found.' });
+    if (value.seat_count !== undefined && value.seat_count < currentTrip.seat_count) {
+      const { data: bookedSeats, error: bookedError } = await supabase.from('registration_seats')
+        .select('seat_label, status, hold_expires_at')
+        .eq('trip_id', currentTrip.id).in('status', ['held', 'paid']);
+      if (bookedError) throw bookedError;
+      const highestBooked = (bookedSeats || [])
+        .filter((row) => row.status === 'paid' || new Date(row.hold_expires_at) > new Date())
+        .reduce((highest, row) => Math.max(highest, Number(row.seat_label) || 0), 0);
+      if (value.seat_count < highestBooked) {
+        return res.status(409).json({
+          message: `Seat ${highestBooked} is already booked, so the seat count cannot go below ${highestBooked}.`,
+        });
+      }
+    }
+    if (value.seat_layout !== undefined && value.seat_layout !== (currentTrip.seat_layout || '2+3')) {
+      // Seats are numbered row by row, so changing the layout would move people who already booked.
+      const { data: activeSeats, error: activeError } = await supabase.from('registration_seats')
+        .select('status, hold_expires_at')
+        .eq('trip_id', currentTrip.id).in('status', ['held', 'paid']);
+      if (activeError) throw activeError;
+      const inUse = (activeSeats || []).some((row) => row.status === 'paid' || new Date(row.hold_expires_at) > new Date());
+      if (inUse) {
+        return res.status(409).json({ message: 'The seat layout cannot be changed once seats have been booked on this trip.' });
+      }
+    }
     if (value.status === 'open' && isExpired(req.organizer)) {
       return res.status(403).json({ message: 'Your subscription has expired. Renew to publish trips.' });
     }
@@ -268,6 +344,7 @@ export async function getTripSeatMap(req, res, next) {
         };
       }),
       seat_count: trip.seat_count,
+      seat_layout: trip.seat_layout || '2+3',
     });
   } catch (error) {
     return next(error);

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowDown, ArrowRight, BarChart3, BusFront, Check, CreditCard, QrCode, ShieldCheck, TicketCheck, WalletCards } from 'lucide-react';
-import { Accordion, Badge, Button, Card, PageContainer } from '../components/ui.jsx';
+import { Accordion, Badge, Card, PageContainer } from '../components/ui.jsx';
+import { BusIllustration } from '../components/Illustrations.jsx';
 
 const features = [
   { icon: BusFront, title: 'Your own branded page', text: 'Give every operator a memorable booking link that carries their name and brand.' },
@@ -44,12 +45,15 @@ function PlatformHomePage() {
             </div>
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-200"><span className="inline-flex items-center gap-2"><Check size={17} className="text-emerald-300" /> Branded organizer pages</span><span className="inline-flex items-center gap-2"><Check size={17} className="text-emerald-300" /> Verified payments</span></div>
           </div>
-          <div className="mx-auto w-full max-w-lg rotate-1 rounded-3xl border border-white/10 bg-white p-3 text-slate-900 shadow-2xl sm:p-5">
+          <div className="mx-auto w-full max-w-lg">
+            <BusIllustration className="w-full rounded-3xl border border-white/10 shadow-2xl" />
+          <div className="relative -mt-12 ml-auto w-[92%] rotate-1 rounded-3xl border border-white/10 bg-white p-3 text-slate-900 shadow-2xl sm:p-5">
             <div className="rounded-2xl bg-slate-50 p-4 sm:p-5">
               <div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-full bg-emerald-800 text-white"><BusFront size={22} /></span><div><p className="text-xs font-semibold uppercase tracking-wide text-emerald-900">Organizer page</p><p className="font-semibold">Lakeview Express</p></div><Badge variant="success" className="ml-auto">Secure</Badge></div>
               <div className="mt-5 rounded-2xl bg-white p-4 shadow-sm"><p className="text-sm text-slate-600">Mzuzu <span aria-hidden="true">→</span> Blantyre</p><p className="mt-1 text-lg font-semibold">Friday · 8:30 AM</p><div className="mt-4 flex items-end justify-between"><div><p className="text-xs text-slate-600">From per seat</p><p className="text-2xl font-bold text-emerald-900">MWK 18,000</p></div><span className="rounded-full bg-emerald-800 px-4 py-2 text-sm font-semibold text-white">Choose seats</span></div></div>
               <div className="mt-4 flex items-center justify-between text-xs text-slate-600"><span className="inline-flex items-center gap-1"><ShieldCheck size={15} /> Payment verified</span><span>Seats held during checkout</span></div>
             </div>
+          </div>
           </div>
         </PageContainer>
       </section>

@@ -40,7 +40,7 @@ function ViewAsBanner() {
       console.error('Unable to exit read-only view:', error);
     }
   }
-  return <div className="mx-auto mb-4 flex max-w-7xl items-center justify-between gap-3 rounded-xl bg-amber-300 px-4 py-3 text-sm font-semibold text-amber-950">
+  return <div className="flex shrink-0 items-center justify-between gap-3 bg-amber-300 px-4 py-2.5 text-sm font-semibold text-amber-950">
     <span>Viewing as {organizer?.name || 'organizer'} (read-only)</span>
     <button onClick={exit} className="rounded-full border border-amber-900/30 px-4 py-1.5">Exit</button>
   </div>;

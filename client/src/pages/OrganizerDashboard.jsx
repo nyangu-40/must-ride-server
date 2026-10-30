@@ -1,11 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, NavLink, Outlet, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BusFront, CheckCircle2, CircleUserRound, LayoutDashboard, LogOut, Palette, WalletCards } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import api from '../services/api.js';
 import { useAuth } from '../auth/AuthProvider.jsx';
 import { formatCurrency } from '../utils/formatters.js';
+import { compressImage } from '../utils/image.js';
+import { coverStyle } from '../utils/trips.js';
 import { Button, Card, StatCard } from '../components/ui.jsx';
+import { SeatLayoutPicker, SeatMap } from '../components/SeatMap.jsx';
+import { DEFAULT_SEAT_LAYOUT, SEAT_LAYOUTS, normalizeLayout } from '../utils/seatLayouts.js';
 
 const cardClass = 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm';
 
@@ -24,35 +28,83 @@ function useLoad(url) {
   return { data, error, loading, setData };
 }
 
+const dashboardLinks = [
+  ['Overview', '/dashboard', LayoutDashboard],
+  ['Trips', '/dashboard/trips', BusFront],
+  ['Wallet', '/dashboard/wallet', WalletCards],
+  ['Branding', '/dashboard/branding', Palette],
+  ['Account', '/dashboard/account', CircleUserRound],
+];
+
+function currentSection(pathname) {
+  const match = [...dashboardLinks].reverse().find(([, to]) => (to === '/dashboard' ? pathname === to : pathname.startsWith(to)));
+  return match ? match[0] : 'Overview';
+}
+
 export function OrganizerLayout() {
-  const { organizer, signOut, impersonating, exitViewAs } = useAuth();
-  const navClass = ({ isActive }) => `rounded-xl font-medium ${isActive ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600 hover:bg-slate-50'}`;
-  const links = [
-    ['Overview', '/dashboard', LayoutDashboard],
-    ['Trips', '/dashboard/trips', BusFront],
-    ['Wallet', '/dashboard/wallet', WalletCards],
-    ['Branding', '/dashboard/branding', Palette],
-    ['Account', '/dashboard/account', CircleUserRound],
-  ];
+  const { organizer, user, signOut, impersonating, exitViewAs } = useAuth();
+  const { pathname } = useLocation();
+  const mainRef = useRef(null);
+  useEffect(() => { mainRef.current?.scrollTo({ top: 0 }); }, [pathname]);
+  const leave = () => (impersonating ? exitViewAs() : signOut());
+  const section = currentSection(pathname);
+  const initial = (user?.email || organizer?.name || 'O').slice(0, 1).toUpperCase();
+  const sideLink = ({ isActive }) => `relative flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition ${isActive ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`;
+  const tabLink = ({ isActive }) => `flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[0.7rem] font-medium ${isActive ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600'}`;
+  const brandMark = organizer?.logo_url
+    ? <img src={organizer.logo_url} alt="" className="h-9 w-9 shrink-0 rounded-xl object-contain" />
+    : <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-100 text-emerald-800"><BusFront size={18} aria-hidden="true" /></span>;
   return (
-    <div className="mx-auto w-full min-w-0 pb-24 lg:pb-0">
-      <header className="mb-5 flex items-center justify-between rounded-3xl bg-white p-4 shadow-sm">
-        <div className="flex items-center gap-3">
-          {organizer?.logo_url && <img src={organizer.logo_url} alt="" className="h-10 w-10 rounded-full object-contain" />}
-          <div><p className="font-semibold text-slate-900">{organizer?.name || 'Organizer dashboard'}</p><p className="text-xs text-slate-500">Organizer workspace</p></div>
+    <div className="flex min-h-0 flex-1">
+      {/* Sidebar: fixed on desktop, never scrolls with the page */}
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
+        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-slate-100 px-5">
+          {brandMark}
+          <div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{organizer?.name || 'Organizer'}</p><p className="truncate text-xs text-slate-500">Organizer workspace</p></div>
         </div>
-      </header>
-      <div className="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <nav aria-label="Organizer workspace" className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t border-slate-200 bg-white/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-soft backdrop-blur lg:sticky lg:top-5 lg:h-[calc(100vh-2.5rem)] lg:flex-col lg:justify-between lg:gap-2 lg:rounded-2xl lg:border-0 lg:p-3 lg:shadow-card">
-          <div className="flex w-full justify-around gap-1 lg:flex-col lg:justify-start lg:gap-2">
-            {links.map(([label, to, Icon]) => <NavLink key={to} to={to} end={to === '/dashboard'} className={`${navClass} flex min-w-0 flex-col items-center gap-1 px-2 py-2 text-[0.7rem] lg:w-full lg:flex-row lg:gap-3 lg:px-4 lg:py-3 lg:text-sm`}><Icon size={18} aria-hidden="true" /><span>{label}</span></NavLink>)}
-            <button type="button" onClick={() => (impersonating ? exitViewAs() : signOut())} className="flex min-w-0 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[0.7rem] font-medium text-slate-600 hover:bg-slate-50 lg:hidden"><LogOut size={18} aria-hidden="true" /><span>{impersonating ? 'Exit' : 'Sign out'}</span></button>
-          </div>
-          <button type="button" onClick={() => (impersonating ? exitViewAs() : signOut())} className="hidden w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 lg:flex"><LogOut size={18} aria-hidden="true" /><span>{impersonating ? 'Exit view-as' : 'Sign out'}</span></button>
+        <nav aria-label="Organizer workspace" className="flex-1 space-y-1 overflow-y-auto p-3">
+          <p className="px-4 pb-1 pt-2 text-[0.7rem] font-semibold uppercase tracking-wider text-slate-400">Workspace</p>
+          {dashboardLinks.map(([label, to, Icon]) => (
+            <NavLink key={to} to={to} end={to === '/dashboard'} className={sideLink}>
+              {({ isActive }) => <>
+                {isActive && <span className="absolute inset-y-2 left-0 w-1 rounded-full bg-emerald-600" aria-hidden="true" />}
+                <Icon size={18} aria-hidden="true" /><span>{label}</span>
+              </>}
+            </NavLink>
+          ))}
         </nav>
-        <main className="min-w-0"><Outlet /></main>
+        <div className="shrink-0 border-t border-slate-100 p-3">
+          <button type="button" onClick={leave} className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-slate-600 hover:bg-slate-50"><LogOut size={18} aria-hidden="true" /><span>{impersonating ? 'Exit view-as' : 'Sign out'}</span></button>
+        </div>
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Top bar: fixed */}
+        <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="lg:hidden">{brandMark}</span>
+            <p className="truncate text-sm text-slate-500"><span className="hidden lg:inline">{organizer?.name || 'Organizer'} <span aria-hidden="true">/</span> </span><span className="font-semibold text-slate-900">{section}</span></p>
+          </div>
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-800" aria-hidden="true">{initial}</span>
+            <span className="hidden max-w-[14rem] truncate text-sm text-slate-600 sm:block">{user?.email}</span>
+          </div>
+        </header>
+
+        {/* Only this area scrolls */}
+        <main ref={mainRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div className="w-full min-w-0 p-4 sm:p-6 lg:p-8">
+            <Outlet />
+            <footer className="mt-10 pb-2 text-center text-xs text-slate-400">Powered by Must Ride</footer>
+          </div>
+        </main>
+
+        {/* Mobile tab bar: part of the shell, not floating over content */}
+        <nav aria-label="Organizer workspace" className="flex shrink-0 gap-1 border-t border-slate-200 bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
+          {dashboardLinks.map(([label, to, Icon]) => <NavLink key={to} to={to} end={to === '/dashboard'} className={tabLink}><Icon size={18} aria-hidden="true" /><span>{label}</span></NavLink>)}
+          <button type="button" onClick={leave} className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[0.7rem] font-medium text-slate-600"><LogOut size={18} aria-hidden="true" /><span>{impersonating ? 'Exit' : 'Sign out'}</span></button>
+        </nav>
       </div>
-      <footer className="mt-8 pb-4 text-center text-xs text-slate-400">Powered by Must Ride</footer>
     </div>
   );
 }
@@ -146,35 +198,136 @@ export function OrganizerOverview() {
 const emptyTrip = {
   title: '', origin: '', destination: '', departure_at: '', price_mode: 'fixed',
   price_per_seat: '', min_amount: '', max_amount: '',
-  seat_count: 66, pickup_locations: '', status: 'draft',
+  seat_count: 66, seat_layout: DEFAULT_SEAT_LAYOUT, pickup_locations: '', status: 'draft',
+  description: '', amenities: '', cover_image_url: '', booking_image_url: '',
 };
+
+const splitList = (value) => String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
+
+function toLocalInput(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (number) => String(number).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function tripToForm(trip) {
+  return {
+    title: trip.title || '', origin: trip.origin || '', destination: trip.destination || '',
+    departure_at: toLocalInput(trip.departure_at),
+    price_mode: trip.price_mode || 'fixed',
+    price_per_seat: trip.price_per_seat ?? '', min_amount: trip.min_amount ?? '', max_amount: trip.max_amount ?? '',
+    seat_count: trip.seat_count ?? 66,
+    seat_layout: normalizeLayout(trip.seat_layout),
+    pickup_locations: (trip.pickup_locations || []).join(', '),
+    status: trip.status || 'draft',
+    description: trip.description || '',
+    amenities: (trip.amenities || []).join(', '),
+    cover_image_url: trip.cover_image_url || '',
+    booking_image_url: trip.booking_image_url || '',
+  };
+}
+
+function formToPayload(form, includeStatus) {
+  const flexible = form.price_mode === 'flexible';
+  const payload = {
+    title: form.title,
+    origin: form.origin,
+    destination: form.destination,
+    departure_at: form.departure_at ? new Date(form.departure_at).toISOString() : null,
+    price_mode: form.price_mode,
+    price_per_seat: Number(form.price_per_seat || form.min_amount),
+    min_amount: flexible ? Number(form.min_amount) : null,
+    max_amount: flexible && form.max_amount !== '' ? Number(form.max_amount) : null,
+    seat_count: Number(form.seat_count),
+    seat_layout: normalizeLayout(form.seat_layout),
+    pickup_locations: splitList(form.pickup_locations),
+    description: form.description.trim(),
+    amenities: splitList(form.amenities),
+    cover_image_url: form.cover_image_url || null,
+    booking_image_url: form.booking_image_url || null,
+  };
+  if (includeStatus) payload.status = form.status;
+  return payload;
+}
+
+const fieldClass = 'mt-1 block w-full rounded-xl border border-slate-200 px-3 py-2';
 
 export function OrganizerTrips() {
   const { data: trips, error, loading, setData } = useLoad('/api/organizer/trips');
   const [form, setForm] = useState(emptyTrip);
+  const [editingId, setEditingId] = useState(null);
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState('');
+  const [listMessage, setListMessage] = useState('');
+  const formRef = useRef(null);
+  const setField = (name, value) => setForm((current) => ({ ...current, [name]: value }));
+  const amenityChips = splitList(form.amenities);
 
-  async function createTrip(event) {
+  async function saveTrip(event) {
     event.preventDefault();
     setMessage('');
     setSaving(true);
     try {
-      const { data } = await api.post('/api/organizer/trips', {
-        ...form,
-        departure_at: form.departure_at ? new Date(form.departure_at).toISOString() : null,
-        price_per_seat: Number(form.price_per_seat || form.min_amount),
-        min_amount: form.price_mode === 'flexible' ? Number(form.min_amount) : null,
-        max_amount: form.price_mode === 'flexible' && form.max_amount !== '' ? Number(form.max_amount) : null,
-        seat_count: Number(form.seat_count),
-        pickup_locations: form.pickup_locations.split(',').map((item) => item.trim()).filter(Boolean),
-      });
-      setData((current) => [data, ...(current || [])]);
+      const payload = formToPayload(form, !editingId);
+      const { data } = editingId
+        ? await api.patch(`/api/organizer/trips/${editingId}`, payload)
+        : await api.post('/api/organizer/trips', payload);
+      setData((current) => (editingId
+        ? (current || []).map((item) => (item.id === editingId ? data : item))
+        : [data, ...(current || [])]));
       setForm(emptyTrip);
-      setMessage('Trip created.');
+      setEditingId(null);
+      setMessage(editingId ? 'Trip updated.' : 'Trip created.');
     } catch (requestError) {
-      setMessage(requestError?.response?.data?.message || 'Unable to create trip.');
+      setMessage(requestError?.response?.data?.message || 'Unable to save trip.');
     } finally { setSaving(false); }
+  }
+
+  function startEdit(trip) {
+    setEditingId(trip.id);
+    setForm(tripToForm(trip));
+    setMessage('');
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setForm(emptyTrip);
+    setMessage('');
+  }
+
+  const uploadPhoto = (field) => async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setMessage('');
+    setUploading(field);
+    try {
+      const prepared = await compressImage(file);
+      const body = new FormData();
+      body.append('cover', prepared);
+      const { data } = await api.post('/api/organizer/uploads/trip-cover', body, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setField(field, data.url);
+    } catch (requestError) {
+      setMessage(requestError?.response?.data?.message || 'Unable to upload the photo.');
+    } finally { setUploading(''); }
+  };
+
+  async function deleteTrip(trip) {
+    if (!window.confirm(`Delete "${trip.title}"? This cannot be undone.`)) return;
+    setListMessage('');
+    try {
+      await api.delete(`/api/organizer/trips/${trip.id}`);
+      setData((current) => (current || []).filter((item) => item.id !== trip.id));
+      if (editingId === trip.id) cancelEdit();
+    } catch (requestError) {
+      setListMessage(requestError?.response?.data?.message || 'Unable to delete this trip.');
+    }
   }
 
   async function updateStatus(trip, status) {
@@ -188,55 +341,113 @@ export function OrganizerTrips() {
 
   return (
     <div className="space-y-5">
-      <div><h1 className="text-2xl font-semibold">Trips</h1><p className="mt-1 text-slate-500">Create trips and control booking availability.</p></div>
-      <form onSubmit={createTrip} className={`${cardClass} grid gap-3 sm:grid-cols-2`}>
-        <h2 className="sm:col-span-2 font-semibold">Create a trip</h2>
+      <div><h1 className="text-2xl font-semibold">Trips</h1><p className="mt-1 text-slate-500">Create trips, edit them, and control booking availability.</p></div>
+      <form ref={formRef} onSubmit={saveTrip} className={`${cardClass} grid gap-3 sm:grid-cols-2`}>
+        <h2 className="sm:col-span-2 font-semibold">{editingId ? 'Edit trip' : 'Create a trip'}</h2>
         {[
           ['title', 'Trip name'], ['origin', 'Origin'], ['destination', 'Destination'],
           ['departure_at', 'Departure date and time'],
           ['seat_count', 'Seat count'], ['pickup_locations', 'Pickup locations (comma separated)'],
         ].map(([name, label]) => <label key={name} className="text-sm text-slate-600">{label}
           <input required={name !== 'departure_at'} type={name === 'departure_at' ? 'datetime-local' : name === 'seat_count' ? 'number' : 'text'}
-            value={form[name]} onChange={(event) => setForm((current) => ({ ...current, [name]: event.target.value }))}
-            className="mt-1 block w-full rounded-xl border border-slate-200 px-3 py-2" />
+            value={form[name]} onChange={(event) => setField(name, event.target.value)}
+            className={fieldClass} />
         </label>)}
+
+        <fieldset className="space-y-4 rounded-2xl border border-slate-200 p-4 sm:col-span-2">
+          <legend className="px-2 font-semibold text-slate-800">Bus seat layout</legend>
+          <p className="text-sm text-slate-500">Pick the layout that matches your bus. Passengers book on exactly this seat map, and you see the same one on your trip page.</p>
+          <SeatLayoutPicker value={form.seat_layout} onChange={(value) => setField('seat_layout', value)} />
+          {editingId && <p className="text-xs text-slate-500">The layout can&apos;t be changed once seats have been booked on this trip.</p>}
+          <details className="rounded-xl bg-slate-50 p-3">
+            <summary className="cursor-pointer text-sm font-medium text-slate-700">Preview of {SEAT_LAYOUTS[normalizeLayout(form.seat_layout)].label} with {Number(form.seat_count) || 0} seats</summary>
+            <SeatMap className="mt-3" seatCount={Math.min(Number(form.seat_count) || 0, 1000)} layout={form.seat_layout} />
+          </details>
+        </fieldset>
+
+        <fieldset className="space-y-3 rounded-2xl border border-slate-200 p-4 sm:col-span-2">
+          <legend className="px-2 font-semibold text-slate-800">Look of your booking page</legend>
+          <div className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                ['cover_image_url', 'Landing page photo', 'Shown on your public page and on the trip card.'],
+                ['booking_image_url', 'Registration page photo', 'Shown at the top of the booking page, for example the inside of the bus.'],
+              ].map(([field, title, help]) => (
+                <div key={field} className="rounded-xl border border-slate-200 p-3">
+                  <p className="text-sm font-semibold text-slate-800">{title}</p>
+                  <div className="mt-2 h-28 w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100" style={form[field] ? coverStyle(form[field]) : undefined} role="img" aria-label={form[field] ? `${title} preview` : `No ${title.toLowerCase()} yet`} />
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <label className="cursor-pointer rounded-full border border-slate-300 px-3 py-1 text-sm font-medium text-slate-800 hover:bg-slate-50">
+                      {uploading === field ? 'Uploading...' : form[field] ? 'Change photo' : 'Add photo'}
+                      <input type="file" accept="image/png,image/jpeg,image/webp" onChange={uploadPhoto(field)} disabled={Boolean(uploading)} className="sr-only" />
+                    </label>
+                    {form[field] && <button type="button" onClick={() => setField(field, '')} className="text-sm text-red-700 underline">Remove</button>}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">{help} JPG, PNG or WebP, resized automatically.</p>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <label className="block text-sm text-slate-600">Description (optional)
+                <textarea rows={3} maxLength={600} value={form.description} onChange={(event) => setField('description', event.target.value)}
+                  placeholder="Tell passengers what to expect on this trip." className={fieldClass} />
+              </label>
+              <label className="block text-sm text-slate-600">On board (comma separated, optional)
+                <input value={form.amenities} onChange={(event) => setField('amenities', event.target.value)}
+                  placeholder="Comfortable seats, Charging ports, Snacks" className={fieldClass} />
+              </label>
+              {amenityChips.length > 0 && <div className="flex flex-wrap gap-2">{amenityChips.map((item) => <span key={item} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">{item}</span>)}</div>}
+            </div>
+          </div>
+        </fieldset>
+
         <fieldset className="space-y-3 rounded-2xl border border-slate-200 p-4 sm:col-span-2">
           <legend className="px-2 font-semibold text-slate-800">Pricing</legend>
           <label className="block text-sm text-slate-600">Price type
-            <select value={form.price_mode} onChange={(event) => setForm((current) => ({ ...current, price_mode: event.target.value }))} className="mt-1 block w-full rounded-xl border border-slate-200 px-3 py-2">
+            <select value={form.price_mode} onChange={(event) => setField('price_mode', event.target.value)} className={fieldClass}>
               <option value="fixed">Fixed price</option><option value="flexible">Passenger chooses amount</option>
             </select>
           </label>
           {form.price_mode === 'fixed' ? <label className="block text-sm text-slate-600">Price per seat (MWK)
-            <input required type="number" min="100" step="1" value={form.price_per_seat} onChange={(event) => setForm((current) => ({ ...current, price_per_seat: event.target.value }))} className="mt-1 block w-full rounded-xl border border-slate-200 px-3 py-2" />
+            <input required type="number" min="100" step="1" value={form.price_per_seat} onChange={(event) => setField('price_per_seat', event.target.value)} className={fieldClass} />
           </label> : <>
             <p className="text-sm text-slate-500">Passengers choose a whole-number amount per seat between your limits. The total is calculated securely when they book.</p>
             <div className="grid gap-3 sm:grid-cols-3">
-              <label className="text-sm text-slate-600">Minimum per seat (MWK)<input required type="number" min="100" step="1" value={form.min_amount} onChange={(event) => setForm((current) => ({ ...current, min_amount: event.target.value }))} className="mt-1 block w-full rounded-xl border border-slate-200 px-3 py-2" /></label>
-              <label className="text-sm text-slate-600">Suggested amount<input type="number" min="100" step="1" value={form.price_per_seat} onChange={(event) => setForm((current) => ({ ...current, price_per_seat: event.target.value }))} placeholder="Defaults to minimum" className="mt-1 block w-full rounded-xl border border-slate-200 px-3 py-2" /></label>
-              <label className="text-sm text-slate-600">Maximum (optional)<input type="number" min="100" step="1" value={form.max_amount} onChange={(event) => setForm((current) => ({ ...current, max_amount: event.target.value }))} className="mt-1 block w-full rounded-xl border border-slate-200 px-3 py-2" /></label>
+              <label className="text-sm text-slate-600">Minimum per seat (MWK)<input required type="number" min="100" step="1" value={form.min_amount} onChange={(event) => setField('min_amount', event.target.value)} className={fieldClass} /></label>
+              <label className="text-sm text-slate-600">Suggested amount<input type="number" min="100" step="1" value={form.price_per_seat} onChange={(event) => setField('price_per_seat', event.target.value)} placeholder="Defaults to minimum" className={fieldClass} /></label>
+              <label className="text-sm text-slate-600">Maximum (optional)<input type="number" min="100" step="1" value={form.max_amount} onChange={(event) => setField('max_amount', event.target.value)} className={fieldClass} /></label>
             </div>
           </>}
           <p className="rounded-xl bg-slate-50 p-3 text-sm text-slate-700">Passenger preview: {form.price_mode === 'fixed'
             ? `Fixed ${formatCurrency(Number(form.price_per_seat) || 0)} per seat`
             : `Choose ${formatCurrency(Number(form.min_amount) || 0)}${form.max_amount ? ` to ${formatCurrency(Number(form.max_amount))}` : ' or more'} per seat`}</p>
         </fieldset>
-        <label className="text-sm text-slate-600">Initial status
-          <select value={form.status} onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))} className="mt-1 block w-full rounded-xl border border-slate-200 px-3 py-2">
-            <option value="draft">Draft</option><option value="open">Open</option><option value="closed">Closed</option>
+
+        {!editingId && <label className="text-sm text-slate-600">Initial status
+          <select value={form.status} onChange={(event) => setField('status', event.target.value)} className={fieldClass}>
+            <option value="draft">Draft (hidden)</option><option value="open">Open (passengers can book)</option><option value="closed">Closed</option>
           </select>
-        </label>
-        {message && <p className="sm:col-span-2 text-sm text-amber-700">{message}</p>}
-        <button disabled={saving} className="rounded-full bg-emerald-600 px-4 py-2 font-semibold text-white disabled:opacity-60">{saving ? 'Saving...' : 'Create trip'}</button>
+        </label>}
+        {message && <p role="status" className="sm:col-span-2 text-sm text-amber-700">{message}</p>}
+        <div className="flex flex-wrap gap-2 sm:col-span-2">
+          <button disabled={saving || uploading} className="rounded-full bg-emerald-600 px-4 py-2 font-semibold text-white disabled:opacity-60">{saving ? 'Saving...' : editingId ? 'Save changes' : 'Create trip'}</button>
+          {editingId && <button type="button" onClick={cancelEdit} className="rounded-full border border-slate-300 px-4 py-2 font-semibold text-slate-700">Cancel</button>}
+        </div>
       </form>
       <section className={cardClass}>
         <h2 className="font-semibold">All trips</h2>
+        {listMessage && <p role="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{listMessage}</p>}
         {loading ? <p className="mt-3 text-slate-500">Loading trips...</p> : error ? <p role="alert" className="mt-3 text-red-700">{error}</p> : (
           <div className="mt-3 divide-y divide-slate-100">
             {(trips || []).map((trip) => <div key={trip.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
-              <Link to={`/dashboard/trips/${trip.id}`} className="font-medium text-slate-900">{trip.title} <span className="font-normal text-slate-500">· {trip.origin} → {trip.destination}</span><span className="mt-1 block text-sm font-medium text-emerald-800">{trip.price_mode === 'flexible' ? `From ${formatCurrency(trip.min_amount)}` : formatCurrency(trip.price_per_seat)} per seat</span></Link>
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="h-14 w-20 shrink-0 rounded-xl border border-slate-200 bg-slate-100" style={trip.cover_image_url ? coverStyle(trip.cover_image_url) : undefined} aria-hidden="true" />
+                <Link to={`/dashboard/trips/${trip.id}`} className="min-w-0 font-medium text-slate-900">{trip.title} <span className="font-normal text-slate-500">· {trip.origin} → {trip.destination}</span><span className="mt-1 block text-sm font-medium text-emerald-800">{trip.price_mode === 'flexible' ? `From ${formatCurrency(trip.min_amount)}` : formatCurrency(trip.price_per_seat)} per seat <span className="font-normal text-slate-500">· {trip.seat_count} seats · {SEAT_LAYOUTS[normalizeLayout(trip.seat_layout)].label}</span></span></Link>
+              </div>
               <div className="flex items-center gap-2"><span className="text-sm capitalize text-slate-500">{trip.status}</span>
+                <button onClick={() => startEdit(trip)} className="rounded-full border px-3 py-1 text-sm">Edit</button>
                 {trip.status === 'open' ? <button onClick={() => updateStatus(trip, 'closed')} className="rounded-full border px-3 py-1 text-sm">Close</button> : <button onClick={() => updateStatus(trip, 'open')} className="rounded-full border px-3 py-1 text-sm">Open</button>}
+                <button onClick={() => deleteTrip(trip)} className="rounded-full border border-red-200 px-3 py-1 text-sm text-red-700 hover:bg-red-50">Delete</button>
               </div>
             </div>)}
             {trips?.length === 0 && <p className="py-4 text-sm text-slate-500">No trips found.</p>}
@@ -249,6 +460,7 @@ export function OrganizerTrips() {
 
 export function OrganizerTripDetail() {
   const { tripId } = useParams();
+  const navigate = useNavigate();
   const [trip, setTrip] = useState(null);
   const [registrations, setRegistrations] = useState([]);
   const [seats, setSeats] = useState([]);
@@ -276,6 +488,8 @@ export function OrganizerTripDetail() {
   }
   useEffect(() => { load(); }, [tripId]);
 
+  const seatList = useMemo(() => seats.map((item) => item.seat), [seats]);
+  const seatInfo = useMemo(() => Object.fromEntries(seats.map((item) => [item.seat, { name: item.name, status: item.status }])), [seats]);
   const filtered = useMemo(() => registrations.filter((item) =>
     item.fullname.toLowerCase().includes(search.toLowerCase())), [registrations, search]);
 
@@ -297,6 +511,12 @@ export function OrganizerTripDetail() {
     }
   }
 
+  async function deleteThisTrip() {
+    if (!window.confirm(`Delete "${trip?.title}"? This cannot be undone.`)) return;
+    try { await api.delete(`/api/organizer/trips/${tripId}`); navigate('/dashboard/trips', { replace: true }); }
+    catch (requestError) { setError(requestError?.response?.data?.message || 'Unable to delete this trip.'); }
+  }
+
   function exportCsv() {
     const rows = [['Passenger', 'Phone', 'Seats', 'Amount', 'Status'], ...filtered.map((item) => [item.fullname, item.phone, item.selected_seats?.join(' '), item.amount, item.payment_status])];
     const csv = rows.map((row) => row.map((field) => `"${String(field ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -310,20 +530,21 @@ export function OrganizerTripDetail() {
   if (loading) return <p className={cardClass}>Loading trip...</p>;
   if (error && !trip) return <p role="alert" className="rounded-2xl bg-red-50 p-4 text-red-700">{error}</p>;
   return <div className="space-y-5">
-    <div><Link to="/dashboard/trips" className="text-sm text-emerald-700">← All trips</Link><h1 className="mt-2 text-2xl font-semibold">{trip?.title}</h1><p className="text-slate-500">{trip?.origin} → {trip?.destination}</p></div>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div><Link to="/dashboard/trips" className="text-sm text-emerald-700">← All trips</Link><h1 className="mt-2 text-2xl font-semibold">{trip?.title}</h1><p className="text-slate-500">{trip?.origin} → {trip?.destination}</p></div>
+      <button type="button" onClick={deleteThisTrip} className="rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">Delete trip</button>
+    </div>
     {error && <p role="alert" className="rounded-2xl bg-red-50 p-3 text-red-700">{error}</p>}
-    <section className={cardClass}><h2 className="font-semibold">Seat map</h2><div className="mt-4 grid grid-cols-5 gap-2 sm:grid-cols-8">
-      {Array.from({ length: trip?.seat_count || 0 }, (_, index) => {
-        const seat = String(index + 1);
-        const taken = seats.find((item) => item.seat === seat);
-        return <div key={seat} title={taken ? `${taken.name} (${taken.status})` : 'Available'} className={`rounded-lg p-2 text-center text-sm ${taken ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-emerald-800'}`}>{seat}</div>;
-      })}
-    </div></section>
+    <section className={cardClass}>
+      <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">Seat map</h2><span className="text-sm text-slate-500">{SEAT_LAYOUTS[normalizeLayout(trip?.seat_layout)].label} layout · {seats.length} of {trip?.seat_count || 0} seats taken</span></div>
+      <p className="mt-1 text-sm text-slate-500">This is the same seat map your passengers see. Tap a taken seat to see who is in it.</p>
+      <SeatMap className="mt-4" seatCount={trip?.seat_count || 0} layout={trip?.seat_layout} takenSeats={seatList} seatInfo={seatInfo} />
+    </section>
     <section className={cardClass}>
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">Registrations</h2><button onClick={exportCsv} className="rounded-full border px-4 py-2 text-sm">Export CSV</button></div>
       <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search passengers" className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2" />
       <div className="mt-4 overflow-x-auto"><table className="min-w-full text-left text-sm"><thead><tr className="text-slate-500"><th className="py-2">Passenger</th><th>Phone</th><th>Seats</th><th>Amount</th><th>Status</th><th /></tr></thead><tbody>
-        {filtered.map((record) => <tr key={record.id} className="border-t border-slate-100"><td className="py-3">{record.fullname}</td><td>{record.phone}</td><td>{record.selected_seats?.join(', ')}</td><td>{formatCurrency(record.amount)}</td><td>{record.payment_status}</td><td className="whitespace-nowrap"><button onClick={() => { setEditTarget(record); setEditForm({ fullname: record.fullname, phone: record.phone }); }} className="mr-3 text-emerald-700">Edit</button><button onClick={() => removeRegistration(record.id)} className="text-rose-700">Delete</button></td></tr>)}
+        {filtered.map((record) => <tr key={record.id} className="border-t border-slate-100"><td className="py-3">{record.fullname}</td><td>{record.phone}</td><td>{record.selected_seats?.map((seat) => { const person = record.passengers?.find((item) => item.seat === seat); return <span key={seat} className="block">{seat}{person?.name && record.selected_seats.length > 1 ? <span className="text-slate-500"> · {person.name}</span> : null}</span>; })}</td><td>{formatCurrency(record.amount)}</td><td>{record.payment_status}</td><td className="whitespace-nowrap"><button onClick={() => { setEditTarget(record); setEditForm({ fullname: record.fullname, phone: record.phone }); }} className="mr-3 text-emerald-700">Edit</button><button onClick={() => removeRegistration(record.id)} className="text-rose-700">Delete</button></td></tr>)}
       </tbody></table>
       {!filtered.length && <p className="py-5 text-sm text-slate-500">No registrations match.</p>}</div>
     </section>

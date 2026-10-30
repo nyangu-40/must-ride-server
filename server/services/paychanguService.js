@@ -17,7 +17,7 @@ function requirePaychanguSecret() {
 export async function createPaychanguCheckout({ fullName, email, phone, amount, reference }) {
   requirePaychanguSecret();
   const webhookUrl = `${SERVER_URL}/webhook/paychangu`;
-  const returnUrl = `${FRONTEND_URL}/#/receipt/${reference}?status=success`;
+  const returnUrl = `${SERVER_URL}/webhook/paychangu?tx_ref=${encodeURIComponent(reference)}`;
 
   console.log('Using SERVER_URL:', SERVER_URL);
   console.log('Using FRONTEND_URL:', FRONTEND_URL);

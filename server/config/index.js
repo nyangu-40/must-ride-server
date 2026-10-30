@@ -1,7 +1,9 @@
 import path from 'path';
+import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 
-const envPath = path.resolve(process.cwd(), '../.env');
+const configDirectory = path.dirname(fileURLToPath(import.meta.url));
+const envPath = path.resolve(configDirectory, '../../.env');
 dotenv.config({ path: envPath });
 
 export const SUPABASE_URL = process.env.SUPABASE_URL;

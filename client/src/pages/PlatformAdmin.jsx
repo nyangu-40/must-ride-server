@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api.js';
 import { useAuth } from '../auth/AuthProvider.jsx';
 import { formatCurrency } from '../utils/formatters.js';
@@ -20,22 +20,29 @@ const navItems = [
 
 export function PlatformLayout() {
   const { signOut } = useAuth();
+  const { pathname } = useLocation();
+  const mainRef = useRef(null);
+  useEffect(() => { mainRef.current?.scrollTo({ top: 0 }); }, [pathname]);
   const { data: applications } = usePlatformData('/api/platform/applications');
   const pendingCount = (applications || []).filter((item) => item.status === 'pending').length;
-  return <div className="mx-auto w-full min-w-0 text-slate-900">
-    <header className="mb-5 flex items-center justify-between rounded-2xl bg-slate-950 p-5 text-white">
-      <div><p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-300">Platform Admin</p><p className="mt-1 text-lg font-semibold">Must Ride Platform</p></div>
-    </header>
-    <div className="grid min-w-0 gap-4 lg:grid-cols-[210px_minmax(0,1fr)] xl:gap-5">
-      <nav aria-label="Platform administration" className="sticky top-2 flex min-w-0 items-center gap-2 overflow-x-auto rounded-2xl bg-slate-950 p-2 sm:p-3 lg:top-0 lg:h-[calc(100vh-1rem)] lg:items-stretch lg:flex-col lg:justify-between lg:overflow-visible">
-        <div className="flex min-w-max gap-2 lg:min-w-0 lg:flex-col">
-          {navItems.map(([label, to]) => <NavLink key={to} to={to} end={to === '/platform'}
-            className={({ isActive }) => `whitespace-nowrap rounded-xl px-4 py-2.5 text-sm ${isActive ? 'bg-emerald-800 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>{label}{label === 'Applications' && pendingCount > 0 && <span className="ml-2 rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-slate-950">{pendingCount}</span>}</NavLink>)}
-        </div>
-        <button type="button" onClick={() => signOut()} className="whitespace-nowrap rounded-xl px-4 py-2.5 text-left text-sm text-slate-300 hover:bg-slate-800 lg:mt-auto"><LogOut size={16} aria-hidden="true" className="mr-2 inline" />Sign out</button>
+  const badge = (label) => label === 'Applications' && pendingCount > 0 && <span className="ml-2 rounded-full bg-amber-400 px-2 py-0.5 text-xs font-semibold text-slate-950">{pendingCount}</span>;
+  return <div className="flex min-h-0 flex-1 flex-col text-slate-900 lg:flex-row">
+    <aside className="hidden w-60 shrink-0 flex-col bg-slate-950 text-white lg:flex">
+      <div className="shrink-0 border-b border-white/10 p-5"><p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-300">Platform Admin</p><p className="mt-1 text-lg font-semibold">Must Ride Platform</p></div>
+      <nav aria-label="Platform administration" className="flex-1 space-y-1 overflow-y-auto p-3">
+        {navItems.map(([label, to]) => <NavLink key={to} to={to} end={to === '/platform'}
+          className={({ isActive }) => `block whitespace-nowrap rounded-xl px-4 py-2.5 text-sm ${isActive ? 'bg-emerald-800 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>{label}{badge(label)}</NavLink>)}
       </nav>
-      <main className="w-full min-w-0 rounded-2xl bg-slate-50 p-3 sm:p-5 lg:p-6"><Outlet /></main>
-    </div>
+      <div className="shrink-0 border-t border-white/10 p-3"><button type="button" onClick={() => signOut()} className="w-full whitespace-nowrap rounded-xl px-4 py-2.5 text-left text-sm text-slate-300 hover:bg-slate-800"><LogOut size={16} aria-hidden="true" className="mr-2 inline" />Sign out</button></div>
+    </aside>
+    <header className="shrink-0 bg-slate-950 text-white lg:hidden">
+      <div className="flex items-center justify-between px-4 py-3"><p className="font-semibold">Must Ride Platform</p><button type="button" onClick={() => signOut()} className="text-sm text-slate-300"><LogOut size={16} aria-hidden="true" className="mr-1 inline" />Sign out</button></div>
+      <nav aria-label="Platform administration" className="flex gap-2 overflow-x-auto px-3 pb-3">
+        {navItems.map(([label, to]) => <NavLink key={to} to={to} end={to === '/platform'}
+          className={({ isActive }) => `whitespace-nowrap rounded-xl px-4 py-2 text-sm ${isActive ? 'bg-emerald-800 text-white' : 'text-slate-300 hover:bg-slate-800'}`}>{label}{badge(label)}</NavLink>)}
+      </nav>
+    </header>
+    <main ref={mainRef} className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-slate-50"><div className="w-full p-4 sm:p-6 lg:p-8"><Outlet /></div></main>
   </div>;
 }
 
