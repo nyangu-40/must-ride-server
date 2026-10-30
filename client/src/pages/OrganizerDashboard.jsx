@@ -50,7 +50,7 @@ export function OrganizerLayout() {
   const section = currentSection(pathname);
   const initial = (user?.email || organizer?.name || 'O').slice(0, 1).toUpperCase();
   const sideLink = ({ isActive }) => `relative flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition ${isActive ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`;
-  const tabLink = ({ isActive }) => `flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[0.7rem] font-medium ${isActive ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600'}`;
+  const tabLink = ({ isActive }) => `flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl px-0.5 py-2 text-xs font-medium ${isActive ? 'bg-emerald-50 text-emerald-800' : 'text-slate-600'}`;
   const brandMark = <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-800 text-white"><BusFront size={18} aria-hidden="true" /></span>;
   const brandLockup = <span className="flex min-w-0 items-center gap-3">{brandMark}<span className="min-w-0"><span className="block truncate text-sm font-semibold text-slate-900">MUST RIDE</span><span className="block truncate text-xs text-slate-500">Tiyende Bookings</span></span></span>;
   return (
@@ -81,11 +81,12 @@ export function OrganizerLayout() {
         <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <span className="lg:hidden">{brandLockup}</span>
-            <p className="truncate text-sm text-slate-500"><span className="hidden lg:inline">{organizer?.name || 'Organizer'} <span aria-hidden="true">/</span> </span><span className="font-semibold text-slate-900">{section}</span></p>
+            <p className="hidden truncate text-sm text-slate-500 lg:block"><span>{organizer?.name || 'Organizer'} <span aria-hidden="true">/</span> </span><span className="font-semibold text-slate-900">{section}</span></p>
           </div>
           <div className="flex min-w-0 items-center gap-2">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-800" aria-hidden="true">{initial}</span>
             <span className="hidden max-w-[14rem] truncate text-sm text-slate-600 sm:block">{user?.email}</span>
+            <button type="button" onClick={leave} aria-label={impersonating ? 'Exit view-as' : 'Sign out'} title={impersonating ? 'Exit view-as' : 'Sign out'} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden"><LogOut size={20} aria-hidden="true" /></button>
           </div>
         </header>
 
@@ -98,9 +99,8 @@ export function OrganizerLayout() {
         </main>
 
         {/* Mobile tab bar: part of the shell, not floating over content */}
-        <nav aria-label="Organizer workspace" className="flex shrink-0 gap-1 border-t border-slate-200 bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
-          {dashboardLinks.map(([label, to, Icon]) => <NavLink key={to} to={to} end={to === '/dashboard'} className={tabLink}><Icon size={18} aria-hidden="true" /><span>{label}</span></NavLink>)}
-          <button type="button" onClick={leave} className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 text-[0.7rem] font-medium text-slate-600"><LogOut size={18} aria-hidden="true" /><span>{impersonating ? 'Exit' : 'Sign out'}</span></button>
+        <nav aria-label="Organizer workspace" className="flex shrink-0 gap-1 border-t border-slate-200 bg-white p-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] lg:hidden">
+          {dashboardLinks.map(([label, to, Icon]) => <NavLink key={to} to={to} end={to === '/dashboard'} className={tabLink}><Icon size={20} aria-hidden="true" /><span className="whitespace-nowrap">{label}</span></NavLink>)}
         </nav>
       </div>
     </div>

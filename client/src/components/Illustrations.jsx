@@ -28,7 +28,6 @@ export function BusIllustration({ className = '' }) {
       <path d="M404 140 h30 a18 18 0 0 1 18 18 v22 h-48z" fill="#7dd3fc" stroke="#0369a1" strokeWidth="2" />
       <rect x="78" y="140" width="30" height="64" rx="6" fill="#bae6fd" stroke="#0369a1" strokeWidth="2" />
       <circle cx="450" cy="214" r="7" fill="#fde047" /><rect x="64" y="210" width="9" height="12" rx="3" fill="#ef4444" />
-      <text x="260" y="226" textAnchor="middle" fontSize="20" fontWeight="700" fill="#fff" fontFamily="Inter, sans-serif" letterSpacing="3">MUST RIDE</text>
       {[148, 380].map((cx) => (
         <g key={cx}><circle cx={cx} cy="254" r="30" fill="#0f172a" /><circle cx={cx} cy="254" r="15" fill="#cbd5e1" /><circle cx={cx} cy="254" r="5" fill="#475569" /></g>
       ))}
